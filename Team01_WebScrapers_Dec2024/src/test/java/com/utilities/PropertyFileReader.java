@@ -16,6 +16,7 @@ import java.util.Properties;
 
 		public static String getGlobalValue(String key) throws Throwable {
 			try {
+				
 				prop = new Properties();
 				fis = new FileInputStream(propertyFilePath);
 				prop.load(fis);
