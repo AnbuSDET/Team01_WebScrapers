@@ -12,6 +12,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import com.utilities.PropertyFileReader;
 
 public class BaseTest {
+	
 	   private static ThreadLocal<WebDriver> tlDriver = new ThreadLocal<>();
 
 	    public static void browsersetup() throws Throwable {

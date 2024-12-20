@@ -8,6 +8,7 @@ public class LoggerLoad {
 	private static Logger logger = LogManager.getLogger(LoggerLoad.class);
 
 	public static void info(String message) {
+		
 		logger.info(message);
 	}
 

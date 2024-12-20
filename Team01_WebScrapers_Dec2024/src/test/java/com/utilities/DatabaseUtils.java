@@ -17,6 +17,7 @@ public class DatabaseUtils {
 		String dbUsername = PropertyFileReader.getGlobalValue("dbUsername");
 		String dbPassword = PropertyFileReader.getGlobalValue("dbPassword");
 		dbConnection = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+		
 	}
 
 	public static void createTable(String tableName) {
