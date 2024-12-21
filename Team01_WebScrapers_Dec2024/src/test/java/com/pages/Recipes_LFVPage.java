@@ -1,4 +1,4 @@
-package pages;
+package com.pages;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,14 +39,10 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 	private String recipeName;
 	private String recipeCategory;
 	private String recipeTags;
-	private String foodCategory;
-	private String cuisineCategory;
+	private String foodCategory;	
 	private String preparationTime;
 	private String cookingTime;
-	private String recipeDescription;
-	private String preparationMethod;
-	private String nutrientValues;
-	private String noOfServings;
+	
 	String alphabetPageTitle = "";
 
 	baseMethods basemethods = new baseMethods();

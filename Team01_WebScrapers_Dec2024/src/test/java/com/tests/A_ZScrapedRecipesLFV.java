@@ -16,7 +16,7 @@ import org.testng.annotations.Test;
 
 import com.baseclass.BaseTest;
 
-import pages.Recipes_LFVPage;
+import com.pages.Recipes_LFVPage;
 import com.utilities.CreateExcel;
 
 public class A_ZScrapedRecipesLFV {

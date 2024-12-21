@@ -1,94 +1,65 @@
 package com.utilities;
-import java.io.File;
+
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFRow;
+
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+
 
 
 import java.io.FileOutputStream;
 public class ExcelWriter {
 
-	
-	public XSSFRow row;
-	public XSSFCell cell;
+	private static final ReentrantLock lock = new ReentrantLock();
 
-	public void WriteData(String sheetname, int rownum, int column, String Recipe_Id, String Recipe_Name,
-			String Recipe_Category,String Food_Category, String Ingredients, String preparation_Time, String cooking_Time, String tag,
-			String noOfServings, String cuisine_category, String recipe_Description,String prep_method,String nutrient_values,String Recipe_url,String filePath) throws IOException {
+    public static void writeToExcel(String sheetName, String recipeId, String recipeName, String recipeCategory,
+                                    String foodCategory, String ingredients, String preparationTime, String cookingTime, String tag,
+                                    String noOfServings, String cuisineCategory, String recipeDescription, String preparationMethod,
+                                    String nutrientValues, String recipeUrl, String filePath) throws IOException {
+        lock.lock();
+        try (FileInputStream fileInputStream = new FileInputStream(filePath);
+             Workbook workbook = WorkbookFactory.create(fileInputStream)) {
 
+            Sheet sheet = workbook.getSheet(sheetName);
+            if (sheet == null) {
+                sheet = workbook.createSheet(sheetName);
+            }
+            System.out.println("Sheet Name: " + sheet.getSheetName());
 
-		FileInputStream inputStream = new FileInputStream(new File(filePath));
-		XSSFWorkbook wb = new XSSFWorkbook(inputStream);
+            // Create a new row
+            int lastRowNum = sheet.getLastRowNum();
+            Row row = sheet.createRow(lastRowNum + 1);
 
-		XSSFSheet sheet = wb.getSheet(sheetname);
+            // Write data to the row
+            row.createCell(0).setCellValue(recipeId);
+            row.createCell(1).setCellValue(recipeName);
+            row.createCell(2).setCellValue(recipeCategory);
+            row.createCell(3).setCellValue(foodCategory);
+            row.createCell(4).setCellValue(ingredients);
+            row.createCell(5).setCellValue(preparationTime);
+            row.createCell(6).setCellValue(cookingTime);
+            row.createCell(7).setCellValue(tag);
+            row.createCell(8).setCellValue(noOfServings);
+            row.createCell(9).setCellValue(cuisineCategory);
+            row.createCell(10).setCellValue(recipeDescription);
+            row.createCell(11).setCellValue(preparationMethod);
+            row.createCell(12).setCellValue(nutrientValues);
+            row.createCell(13).setCellValue(recipeUrl);
 
-		row = sheet.getRow(rownum + 1);
-		cell = row.createCell(column);
-		cell.setCellValue(Recipe_Id);
+            // Ensure workbook is written to file output stream
+            try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
+                workbook.write(outputStream);
+            }
 
-		row = sheet.getRow(rownum + 2);
-		cell = row.createCell(column);
-		cell.setCellValue(Recipe_Name);
-
-		row = sheet.getRow(rownum + 3);
-		cell = row.createCell(column);
-		cell.setCellValue(Recipe_Category);
-		
-		row = sheet.getRow(rownum + 4);
-		cell = row.createCell(column);
-		cell.setCellValue(Food_Category);
-
-		row = sheet.getRow(rownum + 5);
-		cell = row.createCell(column);
-		cell.setCellValue(Ingredients);
-
-		row = sheet.getRow(rownum + 6);
-		cell = row.createCell(column);
-		cell.setCellValue(preparation_Time);
-
-		row = sheet.getRow(rownum + 7);
-		cell = row.createCell(column);
-		cell.setCellValue(cooking_Time);
-
-		row = sheet.getRow(rownum + 8);
-		cell = row.createCell(column);
-		cell.setCellValue(tag);
-
-		row = sheet.getRow(rownum + 9);
-		cell = row.createCell(column);
-		cell.setCellValue(noOfServings);
-
-		row = sheet.getRow(rownum + 10);
-		cell = row.createCell(column);
-		cell.setCellValue(cuisine_category);
-
-		row = sheet.getRow(rownum + 11);
-		cell = row.createCell(column);
-		cell.setCellValue(recipe_Description);
-		
-		row = sheet.getRow(rownum + 12);
-		cell = row.createCell(column);
-		cell.setCellValue(prep_method);
-		
-		row = sheet.getRow(rownum + 13);
-		cell = row.createCell(column);
-		cell.setCellValue(nutrient_values);
-		
-		row = sheet.getRow(rownum + 14);
-		cell = row.createCell(column);
-		cell.setCellValue(Recipe_url);
-		
-		
-
-		FileOutputStream outputStream = new FileOutputStream(filePath);
-		wb.write(outputStream);
-		wb.close();
-		inputStream.close();
-		outputStream.close();
-
-	}
+        } catch (IOException e) {
+            throw new IOException("Error writing to Excel file: " + e.getMessage(), e);
+        } finally {
+            lock.unlock();
+        }
+    }
 }
