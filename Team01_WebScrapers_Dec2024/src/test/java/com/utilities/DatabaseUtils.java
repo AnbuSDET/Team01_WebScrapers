@@ -21,7 +21,7 @@ public class DatabaseUtils {
 	}
 
 	public static void createTable(String tableName) {
-		String createTableSQL = "CREATE TABLE IF NOT EXISTS " + tableName + " (" + "recipe_id VARCHAR(50), "
+		String createTableSQL = "CREATE TABLE IF NOT EXISTS " + tableName + " (" + "recipe_id VARCHAR(50) PRIMARY KEY, "
 				+ "recipe_name VARCHAR(255), " + "recipe_category VARCHAR(100), " + "food_category VARCHAR(100), "
 				+ "ingredients TEXT, " + "preparation_time VARCHAR(50), " + "cooking_time VARCHAR(50), "
 				+ "recipe_tags TEXT, " + "no_of_servings VARCHAR(50), " + "cuisine_category VARCHAR(100), "

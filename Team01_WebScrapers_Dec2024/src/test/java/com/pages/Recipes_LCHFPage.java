@@ -1,6 +1,7 @@
 package com.pages;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,34 +16,30 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.testng.annotations.BeforeClass;
 
+import com.baseclass.baseMethods;
+import com.recipe.Receipedata;
+
+
 import com.utilities.DatabaseUtils;
 import com.utilities.ExcelReader;
 import com.utilities.PropertyFileReader;
 
+
 public class Recipes_LCHFPage {
 
-	
 	private WebDriver driver;
 	private List<String> excellchfAddIngredients;
 	private List<String> excellchfEliminateIngredients;
 	private List<String> excellchfFoodProcessingIngredients;
-	private String recipeName;
-	private String recipeCategory;
-	private String recipeTags;
-	private String foodCategory;
-	private String cuisineCategory;
-	private String preparationTime;
-	private String cookingTime;
-	private String recipeDescription;
-	private String preparationMethod;
-	private String nutrientValues;
-	private String noOfServings;
+	Receipedata dto = new Receipedata();
+
 	private static final Logger logger = Logger.getLogger(Recipes_LCHFPage.class.getName());
 
 	List<String> columnNamesAdd = Collections.singletonList("Add");
 	List<String> columnNamesEliminate = Collections.singletonList("Eliminate");
 	List<String> columnNamesFoodProcessing = Collections.singletonList("Food Processing");
 
+	baseMethods base=new baseMethods();
 	@BeforeClass
 	public void readExcel() throws Throwable {
 		String userDir = System.getProperty("user.dir");
@@ -92,88 +89,121 @@ public class Recipes_LCHFPage {
 
 	private void processRecipe(int index) throws Throwable {
 		List<WebElement> recipeCards = driver.findElements(By.className("rcc_recipecard"));
-
-		// Log the number of recipe cards found
 		logger.info("Number of recipe cards found: " + recipeCards.size());
 
-		// Check if the index is within bounds
 		if (index < 0 || index >= recipeCards.size()) {
-			logger.severe("Index out of bounds: " + index + " for recipe list of size " + recipeCards.size());
+			logger.warning("Index out of bounds: " + index + " for recipe list of size " + recipeCards.size());
 			return;
 		}
 
 		WebElement recipeCard = recipeCards.get(index);
 		String recipeID = recipeCard.getAttribute("id").replaceAll("[^0-9]", "");
 		WebElement recipeNameElement = recipeCard.findElement(By.xpath(".//span[@class='rcc_recipename']/a"));
-		recipeName = recipeNameElement.getText();
+		String recipeName = recipeNameElement.getText();
+
+		if (recipeName == null || recipeName.trim().isEmpty()) {
+			logger.warning("Recipe name is null or empty for index: " + index);
+			return;
+		}
+		 dto.setRecipe_Name(recipeName);
+		    logger.info("Processing recipe: " + recipeName + " (ID: " + recipeID + ")");
 
 		try {
-			// Initialize DB connection before starting the recipe processing
+			// Initialize database connection
 			DatabaseUtils.initializeDBConnection();
-			System.out.println("Connection established successfully...........");
+			logger.info("Database connection established successfully.");
 
-			// Create tables if they don't already exist (one-time setup, not in each
-			// iteration)
+			// Ensure tables exist
 			DatabaseUtils.createTable("LCHFAdd");
 			DatabaseUtils.createTable("LCHFEliminate");
 			DatabaseUtils.createTable("LCHFFoodProcessing");
 
-			// Click to navigate to recipe details page
+			// Navigate to recipe details page
 			recipeNameElement.click();
-			getRecipeCategory();
-			getTags();
-			getFoodCategory();
-			getcuisineCategory();
-			getPreparationTime();
-			getPreparationMethod();
-			getCookingTime();
-			getNutrientValues();
-			getNoOfServings();
-			getRecipeDescription();
 
+			// Extract recipe details
+			dto = extractRecipeDetails();
+
+			// Extract ingredients and match
 			List<String> webIngredients = extractIngredients();
 			List<String> matchedLchfAddIngredients = matchIngredientsWithExcel(excellchfAddIngredients, webIngredients);
 			List<String> unmatchedLchfIngredients = getUnmatchedIngredients(excellchfEliminateIngredients,
 					webIngredients);
 			List<String> matchedLchfFoodProcessing = matchWithTag(excellchfFoodProcessingIngredients);
 
-			// Sequential inserts based on conditions
-			if (!matchedLchfAddIngredients.isEmpty()) {
-				DatabaseUtils.insertIntoTable("LCHFAdd", recipeID, recipeName, recipeCategory, foodCategory,
-						String.join(", ", matchedLchfAddIngredients), preparationTime, cookingTime, recipeTags,
-						noOfServings, cuisineCategory, recipeDescription, preparationMethod, nutrientValues,
-						driver.getCurrentUrl());
-			}
-			if (!unmatchedLchfIngredients.isEmpty()) {
-				DatabaseUtils.insertIntoTable("LCHFEliminate", recipeID, recipeName, recipeCategory, foodCategory,
-						String.join(", ", unmatchedLchfIngredients), preparationTime, cookingTime, recipeTags,
-						noOfServings, cuisineCategory, recipeDescription, preparationMethod, nutrientValues,
-						driver.getCurrentUrl());
-			}
-			if (!matchedLchfFoodProcessing.isEmpty()) {
-				DatabaseUtils.insertIntoTable("LCHFFoodProcessing", recipeID, recipeName, recipeCategory, foodCategory,
-						String.join(", ", webIngredients), preparationTime, cookingTime, recipeTags, noOfServings,
-						cuisineCategory, recipeDescription, preparationMethod, nutrientValues, driver.getCurrentUrl());
-			}
-			int maxRetries = 3;
-			int retryCount = 0;
-			while (retryCount < maxRetries) {
-				try {
-					driver.navigate().back();
-					driver.findElement(By.className("rcc_recipecard")).isDisplayed();
-					return; // Navigation successful, exit retry loop
-				} catch (NoSuchElementException e) {
-					System.out.println("Element not found, retrying...");
-					retryCount++;
-				}
-			}
+			// Attempt to save to database with duplicate check
+			saveToDatabaseWithChecks(dto, recipeID, recipeName, matchedLchfAddIngredients, unmatchedLchfIngredients,
+					matchedLchfFoodProcessing);
+
+			// Retry navigation in case of failure
+			retryNavigation();
+
 		} catch (Exception e) {
 			logger.severe("Error in processRecipe: " + e.getMessage());
 		} finally {
-			// Ensure the database connection is closed only after processing is completed
-			DatabaseUtils.closeDBConnection();
+			DatabaseUtils.closeDBConnection(); // Ensure database connection is closed
 		}
+	}
 
+	private void saveToDatabaseWithChecks(Receipedata dto, String recipeID, String recipeName,
+			List<String> matchedLchfAddIngredients, List<String> unmatchedLchfIngredients,
+			List<String> matchedLchfFoodProcessing) throws SQLException {
+		try {
+			if (!matchedLchfAddIngredients.isEmpty()) {
+				saveRecipeToDatabase(dto, recipeID, recipeName, matchedLchfAddIngredients, "LCHFAdd");
+			}
+			if (!unmatchedLchfIngredients.isEmpty()) {
+				saveRecipeToDatabase(dto, recipeID, recipeName, unmatchedLchfIngredients, "LCHFEliminate");
+			}
+			if (!matchedLchfFoodProcessing.isEmpty()) {
+				saveRecipeToDatabase(dto, recipeID, recipeName, matchedLchfFoodProcessing, "LCHFFoodProcessing");
+			}
+		} catch (SQLException e) {
+			if (e.getMessage().contains("duplicate key value violates unique constraint")) {
+				logger.warning("Duplicate recipe_id found: " + recipeID + ". Skipping to next recipe.");
+			} else {
+				throw e; // Rethrow unexpected exceptions
+			}
+		}
+	}
+
+	private void saveRecipeToDatabase(Receipedata dto2, String recipeID, String recipeName, List<String> ingredients,
+			String tableName) throws SQLException {
+		DatabaseUtils.insertIntoTable(tableName, recipeID, recipeName, dto2.getRecipe_Category(), dto2.getFood_Category(),
+				String.join(", ", ingredients), dto2.getPreparation_Time(), dto2.getCooking_Time(), dto2.getTag(),
+				dto2.getNo_of_servings(), dto2.getCuisine_category(), dto2.getRecipe_Description(),
+				dto2.getPreparation_method(), dto2.getNutrient_values(), driver.getCurrentUrl());
+		logger.info("Recipe saved to " + tableName + " table: " + recipeName);
+	}
+
+	private void retryNavigation() {
+		int maxRetries = 3;
+		int retryCount = 0;
+		while (retryCount < maxRetries) {
+			try {
+				driver.navigate().back();
+				driver.findElement(By.className("rcc_recipecard")).isDisplayed();
+				return; // Navigation successful, exit retry loop
+			} catch (NoSuchElementException e) {
+				logger.warning("Navigation failed, retrying... (" + (retryCount + 1) + "/" + maxRetries + ")");
+				retryCount++;
+			}
+		}
+		logger.severe("Failed to navigate back after " + maxRetries + " attempts.");
+	}
+
+	private Receipedata extractRecipeDetails() throws Throwable {
+		dto.setRecipe_Category(base.getRecipeCategory(dto));
+		dto.setTag(base.getTags(dto));
+		dto.setFood_Category(base.getFoodCategory(dto));
+		dto.setCuisine_category(base.getcuisineCategory(dto));
+		dto.setPreparation_Time(base.getPreparationTime(dto));
+		dto.setCooking_Time(base.getCookingTime(dto));
+		dto.setPreparation_method(base.getPreparationMethod(dto));
+		dto.setNutrient_values(base.getNutrientValues(dto));
+		dto.setNo_of_servings(base.getNoOfServings(dto));
+		dto.setRecipe_Description(base.getRecipeDescription(dto));
+		return dto;
 	}
 
 	private List<String> extractIngredients() {
@@ -212,210 +242,6 @@ public class Recipes_LCHFPage {
 		} catch (Exception e) {
 			System.out.println("No more pages for this alphabet");
 			return false;
-		}
-	}
-
-	private void getRecipeCategory() {
-
-		try {
-			// je.executeScript("window.scrollBy(0,200)");
-			recipeCategory = driver.findElement(By.xpath("//a[@itemprop='recipeCategory'][1]")).getText();
-			if (recipeCategory.toLowerCase().contains("lunch") || recipeName.toLowerCase().contains("lunch")) {
-				recipeCategory = "Lunch";
-			} else if (recipeCategory.toLowerCase().contains("breakfast")
-					|| recipeName.toLowerCase().contains("breakfast")) {
-				recipeCategory = "Breakfast";
-			} else if (recipeCategory.toLowerCase().contains("dinner") || recipeName.toLowerCase().contains("dinner")) {
-				recipeCategory = "Dinner";
-			} else if (recipeCategory.toLowerCase().contains("snack") || recipeName.toLowerCase().contains("snack")) {
-				recipeCategory = "Snack";
-			} else {
-				recipeCategory = "NA";
-			}
-
-			System.out.println("Recipe Category is :" + recipeCategory);
-		} catch (NoSuchElementException e) {
-			System.out.println("Recipe category element not found for recipe: " + recipeName);
-			recipeCategory = "Unknown";
-		}
-	}
-
-	private void getTags() {
-		try {
-
-			List<WebElement> tagElements = driver.findElements(By.xpath("//div[@id='recipe_tags']/a"));
-
-			// Extract the text of each element and store it in a list
-			List<String> tagTexts = new ArrayList<>();
-			for (WebElement element : tagElements) {
-				tagTexts.add(element.getText());
-			}
-
-			// Join the tags into a single string or print individually
-			recipeTags = String.join(", ", tagTexts);
-			System.out.println("Tags are: " + recipeTags);
-		} catch (NoSuchElementException e) {
-			recipeTags = "Unknown";
-			System.out.println("Tags not found.");
-		}
-	}
-
-	// Get the Food Category(Veg/non-veg/vegan/Jain)
-	private void getFoodCategory() {
-		try {
-			if (recipeName.contains("Vegan") || recipeTags.contains("Vegan")) {
-				foodCategory = "VEGAN";
-			} else if (recipeName.contains("Jain") || recipeTags.contains("Jain")) {
-				foodCategory = "JAIN";
-			} else if (recipeName.contains("Egg") || recipeTags.contains("Egg")) {
-				foodCategory = "EGGITARIAN";
-			} else if (recipeName.contains("NonVeg") || recipeTags.contains("NonVeg")) {
-				foodCategory = "NONVEGETARIAN";
-			} else if (recipeName.contains("Vegetarian") || recipeTags.contains("Vegetarian")) {
-				foodCategory = "VEGETARIAN";
-			} else {
-				foodCategory = "NA";
-			}
-
-			System.out.println("Recipe Category is :" + foodCategory);
-
-		} catch (NoSuchElementException e) {
-			System.out.println("Food category element not found for recipe: " + recipeName);
-			foodCategory = "Unknown";
-		}
-	}
-
-	private void getcuisineCategory() {
-		try {
-
-			if (recipeName.contains("Indian") || recipeTags.contains("Indian")) {
-				cuisineCategory = "Indian";
-			} else if (recipeName.contains("South Indian") || recipeTags.contains("South Indian")) {
-				cuisineCategory = "South Indian";
-			} else if (recipeName.contains("Rajasthani") || recipeTags.contains("Rajasthani")) {
-				cuisineCategory = "Rajasthani";
-			} else if (recipeName.contains("Punjabi") || recipeTags.contains("Punjabi")) {
-				cuisineCategory = "Punjabi";
-			} else if (recipeName.contains("Bengali") || recipeTags.contains("Bengali")) {
-				cuisineCategory = "Bengali";
-			} else if (recipeName.contains("Orissa") || recipeTags.contains("orissa")) {
-				cuisineCategory = "Orissa";
-			} else if (recipeName.contains("Gujarati") || recipeTags.contains("Gujarati")) {
-				cuisineCategory = "Gujarati";
-			} else if (recipeName.contains("Maharashtrian") || recipeTags.contains("Maharashtrian")) {
-				cuisineCategory = "Maharashtrian";
-			} else if (recipeName.contains("Andhra") || recipeTags.contains("Andhra")) {
-				cuisineCategory = "Andhra";
-			} else if (recipeName.contains("Kerala") || recipeTags.contains("Kerala")) {
-				cuisineCategory = "Kerala";
-			} else if (recipeName.contains("Goan") || recipeTags.contains("Goan")) {
-				cuisineCategory = "Goan";
-			} else if (recipeName.contains("Kashmiri") || recipeTags.contains("Kashmiri")) {
-				cuisineCategory = "Kashmiri";
-			} else if (recipeName.contains("Himachali") || recipeTags.contains("Himachali")) {
-				cuisineCategory = "Himachali";
-			} else if (recipeName.contains("Tamil nadu") || recipeTags.contains("Tamil nadu")) {
-				cuisineCategory = "Tamil nadu";
-			} else if (recipeName.contains("Karnataka") || recipeTags.contains("Karnataka")) {
-				cuisineCategory = "Karnataka";
-			} else if (recipeName.contains("Sindhi") || recipeTags.contains("Sindhi")) {
-				cuisineCategory = "Sindhi";
-			} else if (recipeName.contains("Chhattisgarhi") || recipeTags.contains("Chhattisgarhi")) {
-				cuisineCategory = "Chhattisgarhi";
-			} else if (recipeName.contains("Madhya pradesh") || recipeTags.contains("Madhya pradesh")) {
-				cuisineCategory = "Madhya pradesh";
-			} else if (recipeName.contains("Assamese") || recipeTags.contains("Assamese")) {
-				cuisineCategory = "Assamese";
-			} else if (recipeName.contains("Manipuri") || recipeTags.contains("Manipuri")) {
-				cuisineCategory = "Manipuri";
-			} else if (recipeName.contains("Tripuri") || recipeTags.contains("Tripuri")) {
-				cuisineCategory = "Tripuri";
-			} else if (recipeName.contains("Sikkimese") || recipeTags.contains("Sikkimese")) {
-				cuisineCategory = "Sikkimese";
-			} else if (recipeName.contains("Mizo") || recipeTags.contains("Mizo")) {
-				cuisineCategory = "Mizo";
-			} else if (recipeName.contains("Arunachali") || recipeTags.contains("Arunachali")) {
-				cuisineCategory = "Arunachali";
-			} else if (recipeName.contains("uttarakhand") || recipeTags.contains("uttarakhand")) {
-				cuisineCategory = "uttarakhand";
-			} else if (recipeName.contains("Haryanvi") || recipeTags.contains("Haryanvi")) {
-				cuisineCategory = "Haryanvi";
-			} else if (recipeName.contains("Awadhi") || recipeTags.contains("Awadhi")) {
-				cuisineCategory = "Awadhi";
-			} else if (recipeName.contains("Bihari") || recipeTags.contains("Bihari")) {
-				cuisineCategory = "Bihari";
-			} else if (recipeName.contains("Uttar pradesh") || recipeTags.contains("Uttar pradesh")) {
-				cuisineCategory = "Uttar pradesh";
-			} else if (recipeName.contains("Delhi") || recipeTags.contains("Delhi")) {
-				cuisineCategory = "Delhi";
-			} else if (recipeName.contains("North Indian") || recipeTags.contains("North Indian")) {
-				cuisineCategory = "North Indian";
-			} else {
-				cuisineCategory = "NA";
-			}
-			System.out.println("Cuisine Category is :" + cuisineCategory);
-		} catch (NoSuchElementException e) {
-			System.out.println("Cuisine category element not found for recipe: " + recipeName);
-			cuisineCategory = "Unknown";
-
-		}
-
-	}
-
-	private void getPreparationTime() {
-		try {
-			preparationTime = driver.findElement(By.xpath("//time[@itemprop='prepTime']")).getText();
-			System.out.println("Preperation Time is :" + preparationTime);
-		} catch (NoSuchElementException e) {
-			preparationTime = "Unknown";
-		}
-	}
-
-	private void getCookingTime() {
-		try {
-			cookingTime = driver.findElement(By.xpath("//time[@itemprop='cookTime']")).getText();
-			System.out.println("Cooking Time is :" + cookingTime);
-		} catch (NoSuchElementException e) {
-			cookingTime = "Unknown";
-		}
-	}
-
-	private void getRecipeDescription() {
-		try {
-			recipeDescription = driver.findElement(By.xpath("//span[@id='ctl00_cntrightpanel_lblDesc']")).getText();
-			System.out.println("Recipe Description: " + recipeDescription);
-		} catch (NoSuchElementException e) {
-			recipeDescription = "Unknown";
-		}
-
-	}
-
-	private void getPreparationMethod() {
-		try {
-			preparationMethod = driver.findElement(By.xpath("//div[@id='recipe_small_steps']")).getText();
-			System.out.println("Preparation Method : " + preparationMethod);
-
-		} catch (NoSuchElementException e) {
-			preparationMethod = "Unknown";
-		}
-
-	}
-
-	private void getNutrientValues() {
-		try {
-			nutrientValues = driver.findElement(By.xpath("//table[@id='rcpnutrients']/tbody")).getText();
-			System.out.println("Nutrient Values: " + nutrientValues);
-		} catch (NoSuchElementException e) {
-			nutrientValues = "Unknown";
-		}
-	}
-
-	private void getNoOfServings() {
-		try {
-			noOfServings = driver.findElement(By.id("ctl00_cntrightpanel_lblServes")).getText();
-			System.out.println("No of Servings: " + noOfServings);
-		} catch (NoSuchElementException e) {
-			noOfServings = "Unknown";
 		}
 	}
 

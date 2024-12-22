@@ -3,6 +3,7 @@ package com.baseclass;
 
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -21,8 +22,15 @@ public class BaseTest {
 	        options.addArguments("--disable-popup-blocking");
 	        options.addArguments("--disable-notifications");
 	        options.addArguments("--disable-extensions");
-	        options.addArguments("disable-gpu"); // Applicable to Windows OS only
+	        options.addArguments("--disable-cache");
+	        options.addArguments("--disk-cache-size=0");
 	        options.addArguments("blink-settings=imagesEnabled=false"); // Disable images
+	        options.addArguments("--disable-plugins");
+	        options.addArguments("--disable-infobars");
+	        options.addArguments("--enable-fast-unload");
+	        options.addArguments("--enable-quic");
+	        options.setPageLoadStrategy(PageLoadStrategy.EAGER);
+
 	        tlDriver.set(new ChromeDriver(options));
 	        openWebsite();
 	    }
