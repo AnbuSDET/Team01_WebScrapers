@@ -11,6 +11,7 @@ import org.openqa.selenium.support.ui.FluentWait;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -23,28 +24,35 @@ public class A_ZScrapedRecipesLFV {
 
 	private Recipes_LFVPage homePage;
 
-	
-	public void createExcelFile() {
-		CreateExcel.createExcelWorkBook();
-	}
-
-	@BeforeMethod
-	public void setup() throws Throwable {
+	@BeforeSuite
+	public void main1() throws Throwable
+	{
 		BaseTest.browsersetup();
 		homePage = new Recipes_LFVPage();
 		homePage.readExcel();
 	}
+	
+	
+	
+	public void setup() throws Throwable {
+		System.out.println( " Clicking A-Z");
+		waitForElementToBeClickable(By.xpath("//a[text()='A']")).click();
+		homePage.extractDataFromPages(BaseTest.getDriver());
+	}
 
+		
 	// if you want to run in parallel set it to true
 
-	@DataProvider(name = "alphabetDataProvider", parallel = false)
+	@DataProvider(name = "alphabetDataProvider", parallel = true)
 	public Object[][] alphabetDataProvider() {
-		return new Object[][] { { "A" } };
+		
+		return new Object[][] { { "A" },{ "B" },{ "C" },{ "D" }, { "E" },{ "F" }, { "G" },{ "H" },
+			{ "I" },{ "J" },{ "K" }, { "L" },{ "M" }, { "N" },{ "O" },{ "P" }, { "Q" },{ "R" }, { "S" },};
 	}
 
 	
 	  
-	//@Test(dataProvider = "alphabetDataProvider")
+	@Test(dataProvider = "alphabetDataProvider")
 	public void clickAlphabetLink(String alphabet) throws Throwable {
 		waitForElementToBeClickable(By.xpath("//a[text()='" + alphabet + "']")).click();
 		System.out.println("Clicked on alphabet: " + alphabet);
@@ -52,13 +60,15 @@ public class A_ZScrapedRecipesLFV {
 	}
 	 
 
-	@Test
+	//@Test 
 	public void main() throws Throwable {
 		System.out.println( " Clicking A-Z");
 		waitForElementToBeClickable(By.xpath("//a[text()='A']")).click();
 		homePage.extractDataFromPages(BaseTest.getDriver());
 	}
-
+	
+	
+	
 	private WebElement waitForElementToBeClickable(By locator) throws Throwable {
 		FluentWait<WebDriver> wait = new FluentWait<>(BaseTest.getDriver()).withTimeout(Duration.ofSeconds(30))
 				.pollingEvery(Duration.ofSeconds(5)).ignoring(NoSuchElementException.class);

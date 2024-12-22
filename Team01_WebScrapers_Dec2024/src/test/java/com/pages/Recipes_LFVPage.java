@@ -28,7 +28,9 @@ import com.utilities.ExcelValueCheck;
 import com.utilities.ExcelWriter;
 import com.utilities.PropertyFileReader;
 
+import recipe.LFV_Add;
 import recipe.Receipedata;
+import org.apache.commons.beanutils.BeanUtils;
 
 public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 
@@ -36,15 +38,10 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 	private List<String> excelVeganIngredients;
 	private List<String> excelNotFullyVeganIngredients;
 	private List<String> excelEliminateIngredients = new ArrayList<>();
-	private String recipeName;
-	private String recipeCategory;
-	private String recipeTags;
-	private String foodCategory;	
-	private String preparationTime;
-	private String cookingTime;
-	
+	private String recipeName;		
 	String alphabetPageTitle = "";
-
+	List<String> unmatchedLFVIngredients;
+	
 	baseMethods basemethods = new baseMethods();
 	private List<String> excelRecipeToAvoidList;
 	private static final Object lock = new Object();
@@ -54,7 +51,7 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 	List<String> columnNamesEliminate = Collections.singletonList("Eliminate");
 	List<String> columnNamesRecipeToAvoid = Collections.singletonList("Recipes to avoid");
 
-	@BeforeClass
+	
 	public void readExcel() throws Throwable {
 		String userDir = System.getProperty("user.dir");
 		String getPathread = PropertyFileReader.getGlobalValue("inputExcelPath");
@@ -87,7 +84,6 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 		extractRecipes();
 	}
 	
-	
 
 	private void extractRecipes() throws Throwable {
 		int pageIndex = 0;
@@ -109,9 +105,12 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 				break;
 			}
 
-			if (!navigateToNextPage()) {
-				break;
-			}
+			
+			 if (!navigateToNextPage()) 
+			 { 
+				 break;
+				 }
+			 
 		}
 	}
 
@@ -126,6 +125,9 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 		}
 	}
 
+	
+	
+	
 	private void processRecipe(int index) throws Throwable {
 	
 		try {
@@ -148,19 +150,20 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 				// Clicking into the recipe link
 				recipeNameElement.click();
 				Receipedata DTO = new Receipedata();
-				DTO.setRecipe_Name(recipeName);
-				basemethods.getRecipeCategory(DTO);
-				basemethods.getTags(DTO);
-				basemethods.getFoodCategory(DTO);
-				basemethods.getcuisineCategory(DTO);
-				basemethods.getPreparationTime(DTO);
-				basemethods.getPreparationMethod(DTO);
-				basemethods.getCookingTime(DTO);
-				basemethods.getNutrientValues(DTO);
-				basemethods.getNoOfServings(DTO);
-				basemethods.getRecipeDescription(DTO);
-
-				List<String> webIngredients = extractIngredients();
+				
+				  DTO.setRecipe_ID(recipeID);
+				  DTO.setRecipe_Name(recipeName);				
+				  DTO.setRecipe_Category(basemethods.getRecipeCategory(DTO));				  
+				  DTO.setTag(basemethods.getTags(DTO));
+				  DTO.setFood_Category(basemethods.getFoodCategory(DTO));
+				  DTO.setCuisine_category(basemethods.getcuisineCategory(DTO));
+				  DTO.setPreparation_Time(basemethods.getPreparationTime(DTO));				  
+				  DTO.setPreparation_method(basemethods.getPreparationMethod(DTO));
+				  DTO.setCooking_Time(basemethods.getCookingTime(DTO));
+				  DTO.setNutrient_values(basemethods.getNutrientValues(DTO));
+				  DTO.setNo_of_servings(basemethods.getNoOfServings(DTO));
+				  DTO.setRecipe_Description(basemethods.getRecipeDescription(DTO));
+				  List<String> webIngredients = extractIngredients();
 				
 				List<String> unmatchedLFVIngredients = getUnmatchedIngredients(excelEliminateIngredients,
 						webIngredients);
@@ -169,51 +172,65 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 				unmatchedLFVIngredients = eliminateRedundantUnmatchedIngredients(unmatchedLFVIngredients);
 				
 				System.out.println("Duplicate removed unmatchedLFVIngredients:"+unmatchedLFVIngredients.size());
-			
+				List<String> matchedVeganIngredients = matchIngredientsWithExcel(excelVeganIngredients, webIngredients);
 				
-				//boolean recipeExistsinAddVeganConditions = ExcelValueCheck.recipeExistsInExcelCheck("LFVAdd", recipeID,
-						//outputDataPath);
+				System.out.println("matchedVeganIngredients:"+matchedVeganIngredients.size());
 				
-				//boolean recipeExistsinAddNotVeganConditions = ExcelValueCheck
-						//.recipeExistsInExcelCheck("LFVAddNotFullyVegan", recipeID, outputDataPath); 
 				
 				SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
 				Session session = sessionFactory.openSession();	
-				session.beginTransaction();
+				
 				Receipedata receipe = new Receipedata();
 				
 				
-                  System.out.println("Receipe Name:"+recipeName);
-                  System.out.println("Receipe Tags:"+recipeTags);                  
-              				
-						
-					if (!unmatchedLFVIngredients.isEmpty()) {
-						synchronized (lock) {	
-							
-							System.out.println("Receipe Name:"+recipeName);		
-						
-						receipe.setRecipe_ID(id);
-						receipe.setRecipe_Name(recipeName);
-						receipe.setRecipe_Category(recipeCategory);
-						receipe.setFood_Category(foodCategory);
-						receipe.setIngredients(String.join(",",unmatchedLFVIngredients ));
-						receipe.setPreparation_Time(preparationTime);
-						receipe.setCooking_Time(cookingTime);
-						
-						System.out.println("Receipe Object:"+receipe);
-						
-						session.save(receipe);
-						session.getTransaction().commit();
-						session.close();
-													
-}
+				  receipe = session.find(Receipedata.class, id); 
+				  
+				  boolean RecipeIDexists=false;
+				  
+				  System.out.println("ExistigReceipe Obj:"+receipe);
+
+					if (null != receipe) {
+						System.out.println("Receipe ID :" + id + " already exists in DB");
+						RecipeIDexists = true;
+					} else {
+						System.out.println("Receipe ID :" + id + " NOT exists in DB");
+						receipe = new Receipedata();
 					}
-												
+				
+					if (!unmatchedLFVIngredients.isEmpty() && !RecipeIDexists) {
+						synchronized (lock) {
+						DTO.setIngredients(String.join(",",unmatchedLFVIngredients ));
+						System.out.println("LFV Eliminate :: Receipe Object brfore Save:"+receipe);		
+						session.beginTransaction();
+						session.save(DTO);
+						session.getTransaction().commit();
+						session.close();													
+						}
+					}
+					
+					if (!matchedVeganIngredients.isEmpty() && !RecipeIDexists) {
+						LFV_Add addObj = new LFV_Add();				
+						//Coping the values from DTO for LVF Add table
+						addObj = basemethods.copyData(DTO, addObj);
+						synchronized (lock) {		
+						
+						addObj.setIngredients(String.join(",",matchedVeganIngredients ));
+						System.out.println("LFV Add :: Receipe Object brfore Save:"+addObj);
+						System.out.println("LFV Add :: Receipe ID::::::"+addObj.getRecipe_ID()+",Name::"+addObj.getRecipe_Name());
+						Session addSession = sessionFactory.openSession();
+						addSession.beginTransaction();
+						addSession.save(addObj);
+						addSession.getTransaction().commit();
+						addSession.close();											
+						}
+					}
+										
 
 				int maxRetries = 3;
 				int retryCount = 0;
 				while (retryCount < maxRetries) {
 					try {
+						System.out.println("Retry");
 						BaseTest.getDriver().navigate().back();
 						BaseTest.getDriver().findElement(By.className("rcc_recipecard")).isDisplayed();
 						return; // Navigation successful, exit retry loop
@@ -238,6 +255,10 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 	           		
 
 }
+	
+		
+	
+	
 
 	private List<String> extractIngredients() throws Throwable {
 		List<WebElement> ingredientsList = BaseTest.getDriver().findElements(By.xpath("//div[@id='rcpinglist']//span[@itemprop='recipeIngredient']//a/span"));
@@ -315,13 +336,6 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 	private String normalize(String text) {
 		return text.toLowerCase().trim();
 	}
-
-	/*
-	 * private boolean navigateToNextPage() { try { WebElement nextPageIndex =
-	 * driver.findElement(By.xpath("//*[@class='rescurrpg']/following-sibling::a"));
-	 * nextPageIndex.click(); return true; } catch (Exception e) {
-	 * System.out.println("No more pages for this alphabet"); return false; } }
-	 */
 
 	
 }

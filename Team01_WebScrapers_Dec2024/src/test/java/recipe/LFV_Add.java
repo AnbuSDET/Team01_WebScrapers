@@ -13,8 +13,8 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "LFV_Elimination")
-public class Receipedata implements Serializable{
+@Table(name = "LFV_Add")
+public class LFV_Add implements Serializable{
 	
 	@Id
 	private String Recipe_ID;
