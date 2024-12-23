@@ -1,6 +1,8 @@
 package com.tests;
 
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.Test;
+
 import java.time.Duration;
 
 
@@ -14,7 +16,7 @@ import org.openqa.selenium.support.ui.FluentWait;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+
 
 import com.baseclass.BaseTest;
 
@@ -39,11 +41,13 @@ public class A_ZScrapedRecipesLCHF {
 	// if you want to run in parallel set it to true
 	@DataProvider(name = "alphabetDataProvider", parallel = false)
 	public Object[][] alphabetDataProvider() {
-		return new Object[][] {{"G"}};
+		return new Object[][] {{"A"} };
 	}
 
+	//,{ "B" },{ "C" },{ "D" }, { "E" },{ "F" }, { "G" },{ "H" },
+	//{ "I" },{ "J" },{ "K" }, { "L" },{ "M" }, { "N" },{ "O" },{ "P" }, { "Q" },{ "R" }, { "S" },{"T"},{"U"},{"V"},{"W"},{"X"},{"Y"},{"Z"}
 	
-	@Test(priority=1,dataProvider = "alphabetDataProvider")
+	@Test(priority=1, dataProvider = "alphabetDataProvider")
 	public void clickAlphabetLink(String alphabet) throws Throwable {
 		waitForElementToBeClickable(By.xpath("//a[text()='" + alphabet + "']")).click();
 		System.out.println("Clicked on alphabet: " + alphabet);
@@ -59,6 +63,7 @@ public class A_ZScrapedRecipesLCHF {
 
 		return wait.until(ExpectedConditions.elementToBeClickable(locator));
 	}
+
 
 	@AfterMethod
 	public void tearDown() {

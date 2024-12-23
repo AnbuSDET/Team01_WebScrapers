@@ -1,5 +1,7 @@
 package com.tests;
 
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.Test;
 import java.time.Duration;
 
 import org.openqa.selenium.By;
@@ -26,7 +28,7 @@ public class A_ZScrapedRecipesLFV {
 	private Recipes_LFVPage homePage;
 
 	
-	@BeforeSuite
+	@BeforeMethod
 	public void setup() throws Throwable {
 		BaseTest.browsersetup();
 		homePage = new Recipes_LFVPage();
@@ -35,9 +37,9 @@ public class A_ZScrapedRecipesLFV {
 	}
 
 	// if you want to run in parallel set it to true
-	@DataProvider(name = "alphabetDataProvider", parallel = true)
+	@DataProvider(name = "alphabetDataProvider", parallel = false)
 	public Object[][] alphabetDataProvider() {
-		return new Object[][] { {"A"}};
+		return new Object[][] { {"A"}, { "B" },{ "C" },{ "D" }, { "E" } };
 	}
 
 	@Test(dataProvider = "alphabetDataProvider")
@@ -54,6 +56,7 @@ public class A_ZScrapedRecipesLFV {
 
 		return wait.until(ExpectedConditions.elementToBeClickable(locator));
 	}
+
 
 	@AfterMethod
 	public void tearDown() {

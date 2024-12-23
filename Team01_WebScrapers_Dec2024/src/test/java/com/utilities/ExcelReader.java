@@ -17,12 +17,12 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ExcelReader {
 
-	 private static final ReentrantLock lock = new ReentrantLock();
+	// private static final ReentrantLock lock = new ReentrantLock();
 
 	    public static List<String> getDataFromExcel(String sheetName, List<String> columnNames, String inputDataPath) throws IOException {
 	       
 	    	List<String> allColumnsData = new ArrayList<>();
-	        lock.lock();
+	      //  lock.lock();
 	        try (FileInputStream fis = new FileInputStream(inputDataPath);
 	             XSSFWorkbook workbook = new XSSFWorkbook(fis)) {
 
@@ -59,7 +59,7 @@ public class ExcelReader {
 	                }
 	            }
 	        } finally {
-	            lock.unlock();
+	           // lock.unlock();
 	        }
 
 	        return allColumnsData;

@@ -1,65 +1,101 @@
 package com.baseclass;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Set;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.NoSuchElementException;
 
 import com.recipe.LFV_Add;
 import com.recipe.Receipedata;
 
 public class baseMethods {
-String alphabetPageTitle = "";	
+
+	String alphabetPageTitle = "";
+
+	public List<String> AddIngredients(List<String> excelAddingredients, List<String> webIngredients) {
+		ArrayList<String> addIngredients = new ArrayList<>();
+		addIngredients.addAll(excelAddingredients);
+		addIngredients.addAll(webIngredients);
+		return addIngredients;
+	}
+
+	public boolean eliminateRecipe(List<String> excelIngredients, List<String> webIngredients) {
+
+		Set<String> excelSet = new HashSet<>(excelIngredients);
+		for (String webIngredient : webIngredients) {
+			for (String excelIngredient : excelSet) {
+				if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) {
+					// Found a match, eliminate the recipe
+					return false;
+				}
+			}
+		}
+		// No matches found, keep the recipe
+		return true;
+	}
+
+	public boolean addIngredients(List<String> excelIngredients, List<String> webIngredients) {
+
+		Set<String> excelSet = new HashSet<>(excelIngredients);
+		for (String webIngredient : webIngredients) {
+			for (String excelIngredient : excelSet) {
+				if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	
+
 	
 	public String getRecipeCategory(Receipedata DTO) throws Throwable {
 		String recipeCategory;
 		try {
 			// je.executeScript("window.scrollBy(0,200)");
-			 recipeCategory = BaseTest.getDriver().findElement(By.xpath("//a[@itemprop='recipeCategory'][1]")).getText();
-			if (recipeCategory.toLowerCase().contains("lunch") || DTO.getRecipe_Name().toLowerCase().contains("lunch")) {
+			recipeCategory = BaseTest.getDriver().findElement(By.xpath("//a[@itemprop='recipeCategory'][1]")).getText();
+			if (recipeCategory.toLowerCase().contains("lunch")
+					|| DTO.getRecipe_Name().toLowerCase().contains("lunch")) {
 				recipeCategory = "Lunch";
 			} else if (recipeCategory.toLowerCase().contains("breakfast")
 					|| DTO.getRecipe_Name().toLowerCase().contains("breakfast")) {
 				recipeCategory = "Breakfast";
-			} else if (recipeCategory.toLowerCase().contains("dinner") || DTO.getRecipe_Name().toLowerCase().contains("dinner")) {
+			} else if (recipeCategory.toLowerCase().contains("dinner")
+					|| DTO.getRecipe_Name().toLowerCase().contains("dinner")) {
 				recipeCategory = "Dinner";
-			} else if (recipeCategory.toLowerCase().contains("snack") || DTO.getRecipe_Name().toLowerCase().contains("snack")) {
+			} else if (recipeCategory.toLowerCase().contains("snack")
+					|| DTO.getRecipe_Name().toLowerCase().contains("snack")) {
 				recipeCategory = "Snack";
 			} else {
 				recipeCategory = "NA";
 			}
+
+			// System.out.println("Recipe Category is :" + recipeCategory);
 		} catch (NoSuchElementException e) {
 			System.out.println("Recipe category element not found for recipe: " + DTO.getRecipe_Name());
 			recipeCategory = "Unknown";
 		}
-		
+		// DTO.setRecipe_Category(recipeCategory);
+		// System.out.println("DTO :" + DTO);
 		return recipeCategory;
 	}
 
 	public String getTags(Receipedata DTO) throws Throwable {
 		String recipeTags;
 		try {
-
-			List<WebElement> tagElements = BaseTest.getDriver().findElements(By.xpath("//div[@id='recipe_tags']/a"));
-
-			// Extract the text of each element and store it in a list
-			List<String> tagTexts = new ArrayList<>();
-			for (WebElement element : tagElements) {
-				tagTexts.add(element.getText());
-			}
-
-			// Join the tags into a single string or print individually
-			recipeTags = String.join(", ", tagTexts);
-			System.out.println("Tags are: " + recipeTags);
+			recipeTags = BaseTest.getDriver().findElement(By.id("recipe_tags")).getText();
+			// System.out.println("Tags are : " + recipeTags);
 		} catch (NoSuchElementException e) {
 			recipeTags = "Unknown";
-			System.out.println("Tags not found.");
 		}
+
 		return recipeTags;
 	}
-
 
 	// Get the Food Category(Veg/non-veg/vegan/Jain)
 	public String getFoodCategory(Receipedata DTO) {
@@ -79,18 +115,20 @@ String alphabetPageTitle = "";
 				foodCategory = "NA";
 			}
 
+			// System.out.println("Food Category is :" + foodCategory);
+
 		} catch (NoSuchElementException e) {
 			System.out.println("Food category element not found for recipe: " + DTO.getRecipe_Name());
 			foodCategory = "Unknown";
 		}
-				return foodCategory;
+		return foodCategory;
 	}
 
 	public String getcuisineCategory(Receipedata DTO) {
 		String cuisineCategory;
 		try {
 			String lowerCaseRecipeName = DTO.getRecipe_Name().toLowerCase();
-			String lowerCaseRecipeTags = DTO.getTag().toLowerCase();		
+			String lowerCaseRecipeTags = DTO.getTag().toLowerCase();
 
 			if (lowerCaseRecipeName.contains("indian") || lowerCaseRecipeTags.contains("indian")) {
 				cuisineCategory = "Indian";
@@ -158,21 +196,24 @@ String alphabetPageTitle = "";
 			} else {
 				cuisineCategory = "NA";
 			}
+			// System.out.println("Cuisine Category is: " + cuisineCategory);
 		} catch (NoSuchElementException e) {
 			System.out.println("Cuisine category element not found for recipe: " + DTO.getRecipe_Name());
 			cuisineCategory = "Unknown";
 		}
-      return cuisineCategory;
+		return cuisineCategory;
 	}
 
 	public String getPreparationTime(Receipedata DTO) throws Throwable {
 		String preparationTime;
 		try {
-			 preparationTime = BaseTest.getDriver().findElement(By.xpath("//time[@itemprop='prepTime']")).getText();
+			preparationTime = BaseTest.getDriver().findElement(By.xpath("//time[@itemprop='prepTime']")).getText();
+			// System.out.println("Preperation Time is :" + preparationTime);
+			// je.executeScript("window.scrollBy(0,200)");
 		} catch (NoSuchElementException e) {
 			preparationTime = "0";
 		}
-		
+
 		return preparationTime;
 	}
 
@@ -180,45 +221,50 @@ String alphabetPageTitle = "";
 		String cookingTime;
 		try {
 			cookingTime = BaseTest.getDriver().findElement(By.xpath("//time[@itemprop='cookTime']")).getText();
+			// System.out.println("Cooking Time is :" + cookingTime);
 		} catch (NoSuchElementException e) {
 			cookingTime = "0";
 		}
-		
+
 		return cookingTime;
 	}
 
 	public String getRecipeDescription(Receipedata DTO) throws Throwable {
 		String recipeDescription;
 		try {
-			recipeDescription = BaseTest.getDriver().findElement(By.xpath("//span[@id='ctl00_cntrightpanel_lblDesc']")).getText();
+			recipeDescription = BaseTest.getDriver().findElement(By.xpath("//span[@id='ctl00_cntrightpanel_lblDesc']"))
+					.getText();
+			// System.out.println("Recipe Description: " + recipeDescription);
 		} catch (NoSuchElementException e) {
 			recipeDescription = "Unknown";
 		}
-     
-       return recipeDescription.trim();
+
+		return recipeDescription.trim();
 	}
 
 	public String getPreparationMethod(Receipedata DTO) throws Throwable {
 		String preparationMethod;
 		try {
-			preparationMethod = BaseTest.getDriver().findElement(By.xpath("//div[@id='recipe_small_steps']")).getText();
-			System.out.println("Preparation Method : " + preparationMethod);
+			preparationMethod = BaseTest.getDriver()
+					.findElement(By.xpath("//div[@id='ctl00_cntrightpanel_pnlRcpMethod']")).getText();
+			// System.out.println("Preparation Method : " + preparationMethod);
 
 		} catch (NoSuchElementException e) {
 			preparationMethod = "Unknown";
 		}
+
 		return preparationMethod;
 	}
-	
 
 	public String getNutrientValues(Receipedata DTO) throws Throwable {
 		String nutrientValues;
 		try {
 			nutrientValues = BaseTest.getDriver().findElement(By.xpath("//table[@id='rcpnutrients']/tbody")).getText();
+			// System.out.println("Nutrient Values: " + nutrientValues);
 		} catch (NoSuchElementException e) {
 			nutrientValues = "Unknown";
 		}
-		
+
 		return nutrientValues;
 	}
 
@@ -226,35 +272,47 @@ String alphabetPageTitle = "";
 		String noOfServings;
 		try {
 			noOfServings = BaseTest.getDriver().findElement(By.id("ctl00_cntrightpanel_lblServes")).getText();
+			// System.out.println("No of Servings: " + noOfServings);
 		} catch (NoSuchElementException e) {
 			noOfServings = "0";
 		}
-		
+
 		return noOfServings;
 	}
-	
-	
-	public LFV_Add copyData(Receipedata eliminateDTO,LFV_Add addDTO) throws Throwable {
-		
+
+	public String getRecipeURL(Receipedata DTO) throws Throwable {
+		String Url;
+		try {
+			Url = BaseTest.getDriver().getCurrentUrl();
+			// System.out.println("No of Servings: " + noOfServings);
+		} catch (NoSuchElementException e) {
+			Url = "";
+		}
+
+		return Url;
+	}
+
+	public LFV_Add copyData(Receipedata eliminateDTO, LFV_Add addDTO) throws Throwable {
+
 		try {
 			addDTO.setRecipe_ID(eliminateDTO.getRecipe_ID());
-			addDTO.setRecipe_Name(eliminateDTO.getRecipe_Name());				
-			addDTO.setRecipe_Category(eliminateDTO.getRecipe_Category());				  
+			addDTO.setRecipe_Name(eliminateDTO.getRecipe_Name());
+			addDTO.setRecipe_Category(eliminateDTO.getRecipe_Category());
 			addDTO.setTag(eliminateDTO.getTag());
 			addDTO.setFood_Category(eliminateDTO.getFood_Category());
 			addDTO.setCuisine_category(eliminateDTO.getCuisine_category());
-			addDTO.setPreparation_Time(eliminateDTO.getPreparation_Time());				  
+			addDTO.setPreparation_Time(eliminateDTO.getPreparation_Time());
 			addDTO.setPreparation_method(eliminateDTO.getPreparation_method());
 			addDTO.setCooking_Time(eliminateDTO.getCooking_Time());
 			addDTO.setNutrient_values(eliminateDTO.getNutrient_values());
 			addDTO.setNo_of_servings(eliminateDTO.getNo_of_servings());
 			addDTO.setRecipe_Description(eliminateDTO.getRecipe_Description());
-			
+
 		} catch (NoSuchElementException e) {
-			System.out.println("copyData :: "+e.getLocalizedMessage());
+			System.out.println("copyData :: " + e.getLocalizedMessage());
 		}
+		// System.out.println("copyData :: Final Add::"+addDTO);
 		return addDTO;
 	}
-	
-	
+
 }

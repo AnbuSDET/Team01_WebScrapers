@@ -11,7 +11,8 @@
         <property name="hibernate.connection.url">jdbc:postgresql://localhost:5432/recipescraping_db</property>
         <property name="hibernate.connection.username">postgres</property>
         <property name="hibernate.connection.password">Admin</property>
- 
+       <property name="maximumPoolSize">50</property>
+ 				 
         <!-- SQL dialect -->
         <property name="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</property>
  
@@ -22,7 +23,8 @@
         <property name="hibernate.hbm2ddl.auto">update</property>
  
         <!-- Annotated entity classes -->
-        <mapping class="com.recipe.RecipeData_LFV"/>
+        <mapping class="com.recipe.Receipedata"/>
+        <mapping class="com.recipe.LFV_Add"/>
         
     </session-factory>
 </hibernate-configuration>
