@@ -43,7 +43,7 @@ public class A_ZScrapedRecipesLFV {
 		
 	// if you want to run in parallel set it to true
 
-	@DataProvider(name = "alphabetDataProvider", parallel = true)
+	//@DataProvider(name = "alphabetDataProvider", parallel = true)
 	public Object[][] alphabetDataProvider() {
 		
 		return new Object[][] { { "A" },{ "B" },{ "C" },{ "D" }, { "E" },{ "F" }, { "G" },{ "H" },
@@ -52,7 +52,7 @@ public class A_ZScrapedRecipesLFV {
 
 	
 	  
-	@Test(dataProvider = "alphabetDataProvider")
+	//@Test(dataProvider = "alphabetDataProvider")
 	public void clickAlphabetLink(String alphabet) throws Throwable {
 		waitForElementToBeClickable(By.xpath("//a[text()='" + alphabet + "']")).click();
 		System.out.println("Clicked on alphabet: " + alphabet);
@@ -60,7 +60,7 @@ public class A_ZScrapedRecipesLFV {
 	}
 	 
 
-	//@Test 
+	@Test 
 	public void main() throws Throwable {
 		System.out.println( " Clicking A-Z");
 		waitForElementToBeClickable(By.xpath("//a[text()='A']")).click();

@@ -282,6 +282,24 @@ public class Recipes_LFVPage_Original extends A_ZScrapedRecipesLFV {
 		return unmatchedIngredients;
 	}
 
+	
+	public boolean eliminateRecipe(List<String> excelIngredients, List<String> webIngredients) {
+	    Set<String> excelSet = new HashSet<>(excelIngredients);
+	    for (String webIngredient : webIngredients) {
+	        for (String excelIngredient : excelSet) {
+	            if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) {
+	                // Found a match, eliminate the recipe
+	                return false;
+	            }
+	        }
+	    }
+	    // No matches found, keep the recipe
+	    return true;
+	}
+
+	
+	
+	
 	private List<String> eliminateRedundantUnmatchedIngredients(List<String> unmatchedIngredients) {
 		return new ArrayList<>(new HashSet<>(unmatchedIngredients));
 	}

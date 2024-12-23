@@ -1,7 +1,10 @@
 package com.baseclass;
 
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -16,6 +19,36 @@ import recipe.Receipedata;
 public class baseMethods  {			
 	
 	String alphabetPageTitle = "";	
+	
+	private List<String> eliminateRedundantUnmatchedIngredients(List<String> unmatchedIngredients) {
+		return new ArrayList<>(new HashSet<>(unmatchedIngredients));
+	}
+	
+	public List<String> AddIngredients(List<String>excelAddingredients,List<String> webIngredients)
+	{
+		ArrayList<String> addIngredients = new ArrayList<>();		
+		addIngredients.addAll(excelAddingredients)	;
+		addIngredients.addAll(webIngredients);
+		return addIngredients;
+	}
+		
+	
+	public boolean eliminateRecipe(List<String> excelIngredients, List<String> webIngredients) {
+		
+	    Set<String> excelSet = new HashSet<>(excelIngredients);
+	    for (String webIngredient : webIngredients) {
+	        for (String excelIngredient : excelSet) {
+	            if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) {
+	                // Found a match, eliminate the recipe
+	                return false;
+	            }
+	        }
+	    }
+	    // No matches found, keep the recipe
+	    return true;
+	}
+	
+	
 	
 	public String getRecipeCategory(Receipedata DTO) throws Throwable {
 		String recipeCategory;
@@ -239,6 +272,18 @@ public class baseMethods  {
 		return noOfServings;
 	}
 	
+	public String getRecipeURL(Receipedata DTO) throws Throwable
+	{
+		String Url;
+		try {
+			Url = BaseTest.getDriver().getCurrentUrl();
+			//System.out.println("No of Servings: " + noOfServings);
+		} catch (NoSuchElementException e) {
+			Url = "";
+		}
+		
+		return Url;
+	}
 	
 	public LFV_Add copyData(Receipedata eliminateDTO,LFV_Add addDTO) throws Throwable {
 		
