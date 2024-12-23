@@ -52,7 +52,7 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 	List<String> columnNamesNotFullyVegan = Collections.singletonList("To Add ( if not fully vegan)");
 	List<String> columnNamesEliminate = Collections.singletonList("Eliminate");
 	List<String> columnNamesRecipeToAvoid = Collections.singletonList("Recipes to avoid");
-	List<String> columnNameAllergies = Collections.singletonList("Allergies");
+	
 
 	public void readExcel() throws Throwable {
 		String userDir = System.getProperty("user.dir");
@@ -146,13 +146,14 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 					receipe = new Receipedata();
 				}
 
-				boolean LFVEliminate = basemethods.eliminateRecipe(excelEliminateIngredients,webIngredients);
+				boolean LFVEliminate = basemethods.eliminateRecipe(excelEliminateIngredients,webIngredients);	
 				
-				List<String> LFV_VeganIngredients =basemethods.AddIngredients(excelVeganIngredients,webIngredients);
+				boolean LFVAdd = basemethods.addIngredients(excelVeganIngredients,webIngredients);							
 				
-				ArrayList<String> LFV_NotfullyVeganIngredients=new ArrayList<String>(LFV_VeganIngredients);
+				boolean LFVnotFullyVegan=basemethods.notFullyVegan(excelNotFullyVeganIngredients, webIngredients);
 				
-				LFV_NotfullyVeganIngredients.addAll(excelNotFullyVeganIngredients);
+				boolean LFVreceipesToavoid=basemethods.receipesToavoid(excelRecipeToAvoidList, webIngredients);
+				
 				
 				if (LFVEliminate && !RecipeIDexists) {
 					synchronized (lock) {
@@ -165,13 +166,15 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 					}
 				}
 
-				if (!LFV_VeganIngredients.isEmpty() && !RecipeIDexists && LFVEliminate) {
+				if ( !RecipeIDexists && LFVEliminate) {
+					if(LFVAdd) {
+					
 					LFV_Add addObj = new LFV_Add();
 					// Coping the values from DTO for LVF Add table
 					addObj = basemethods.copyData(DTO, addObj);
 					synchronized (lock) {
 						StringBuilder build = new StringBuilder();
-						build.append(String.join(",", webIngredients)).append("/n").append("Add Ingredients").append(String.join(",", excelVeganIngredients));
+						build.append(String.join(",", webIngredients));
 						DTO.setIngredients(build.toString());
 						//System.out.println("LFV Add :: Receipe Object brfore Save:" + addObj);
 						Session addSession = sessionFactory.openSession();
@@ -181,8 +184,13 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 						addSession.close();
 					}
 				}
-
-				if (!LFV_NotfullyVeganIngredients.isEmpty() && !RecipeIDexists && LFVEliminate && !DTO.getTag().equalsIgnoreCase("Vegan")) {
+					
+				}
+				
+				if (!RecipeIDexists && LFVEliminate  ) {
+					if(LFVAdd) {
+						if(LFVnotFullyVegan) {		
+						
 					try {
 						
 						synchronized (lock) {
@@ -197,7 +205,7 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 									.append(DTO.getCuisine_category()).append(DTO.getPreparation_Time())
 									.append(DTO.getCooking_Time()).append(DTO.getTag()).append(DTO.getNo_of_servings())
 									.append(DTO.getRecipe_Description()).append(DTO.getPreparation_method())
-									.append(DTO.getNutrient_values()).append(String.join(",", LFV_NotfullyVeganIngredients))
+									.append(DTO.getNutrient_values()).append(String.join(",", webIngredients))
 									.append(DTO.getRecipe_URL()).append(")");
 							PreparedStatement pstmt = conn.prepareStatement(sql2.toString());
 							pstmt.executeUpdate();
@@ -206,7 +214,13 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 						System.out.println("Error writing to DB LFV_NotFullyVegan: " + e.getMessage());
 					}
 				}
-				if (true) {
+					}
+				}
+						
+					if (!RecipeIDexists && LFVEliminate  ) {
+							if(LFVAdd) {
+								if(LFVreceipesToavoid) {							
+								 	 
 					StringBuilder sql = new StringBuilder();
 					try {
 						synchronized (lock) {
@@ -227,8 +241,8 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 						System.out.println("Error writing to DB LFV_ReceipesToAvoid: " + e.getMessage());
 					}
 				}
-
-				
+					}
+					}
 				 						
 				int maxRetries = 3;
 				int retryCount = 0;
@@ -271,32 +285,6 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 		return webIngredients;
 	}
 
-	
-	
-
-	public List<String> matchwithRecipeToAvoid(List<String> excelIngredients) throws Throwable {
-		List<String> matchedIngredients = new ArrayList<>();
-		// Extract tags from the web page
-		String tagText = BaseTest.getDriver().findElement(By.id("recipe_tags")).getText().toLowerCase();
-		String[] tagArray = tagText.split(",\\s*"); // Split by comma and trim whitespace
-		List<String> tags = Arrays.asList(tagArray);
-		// Match tags with Excel ingredients list (partial matches allowed)
-		for (String tag : tags) {
-			for (String excelIngredient : excelIngredients) {
-				if (normalize(tag).contains(normalize(excelIngredient))
-						|| normalize(excelIngredient).contains(normalize(tag))) {
-					System.out.println("Match found: " + excelIngredient + " in tags.");
-					matchedIngredients.add(excelIngredient);
-					// Assuming you want to add all matching ingredients
-				}
-			}
-		}
-		return matchedIngredients;
-	}
-
-	private String normalize(String text) {
-		return text.toLowerCase().trim();
-	}
 	private void extractRecipes() throws Throwable {
 		int pageIndex = 0;
 		System.out.println(" Page Number" + pageIndex);

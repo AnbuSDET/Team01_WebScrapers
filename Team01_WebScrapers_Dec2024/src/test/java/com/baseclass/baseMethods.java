@@ -20,9 +20,6 @@ public class baseMethods  {
 	
 	String alphabetPageTitle = "";	
 	
-	private List<String> eliminateRedundantUnmatchedIngredients(List<String> unmatchedIngredients) {
-		return new ArrayList<>(new HashSet<>(unmatchedIngredients));
-	}
 	
 	public List<String> AddIngredients(List<String>excelAddingredients,List<String> webIngredients)
 	{
@@ -48,7 +45,48 @@ public class baseMethods  {
 	    return true;
 	}
 	
+
+	public boolean addIngredients(List<String> excelIngredients, List<String> webIngredients) {
+		
+	    Set<String> excelSet = new HashSet<>(excelIngredients);
+	    for (String webIngredient : webIngredients) {
+	        for (String excelIngredient : excelSet) {
+	            if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) {	               
+	                return true;
+	            }
+	        }
+	    }
+	    
+	    return false;
+	}
 	
+    public boolean notFullyVegan(List<String> excelIngredients, List<String> webIngredients) {
+		
+	    Set<String> excelSet = new HashSet<>(excelIngredients);
+	    for (String webIngredient : webIngredients) {
+	        for (String excelIngredient : excelSet) {
+	            if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) {	               
+	                return true;
+	            }
+	        }
+	    }
+	    
+	    return false;
+	}
+	
+public boolean receipesToavoid(List<String> excelIngredients, List<String> webIngredients) {
+		
+	    Set<String> excelSet = new HashSet<>(excelIngredients);
+	    for (String webIngredient : webIngredients) {
+	        for (String excelIngredient : excelSet) {
+	            if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) {	               
+	                return false;
+	            }
+	        }
+	    }
+	    
+	    return true;
+	}
 	
 	public String getRecipeCategory(Receipedata DTO) throws Throwable {
 		String recipeCategory;

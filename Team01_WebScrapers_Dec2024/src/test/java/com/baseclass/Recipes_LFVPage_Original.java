@@ -184,6 +184,8 @@ public class Recipes_LFVPage_Original extends A_ZScrapedRecipesLFV {
 						System.out.println("Error writing to Excel: " + e.getMessage());
 					}
 				}
+				
+				
 				if (!unmatchedLFVIngredients.isEmpty()) {
 					try {
 						synchronized (lock) {
@@ -196,6 +198,8 @@ public class Recipes_LFVPage_Original extends A_ZScrapedRecipesLFV {
 						System.out.println("Error writing to Excel: " + e.getMessage());
 					}
 				}
+				
+				
 
 				if (!RecipeToAvoidFood.isEmpty()) {
 					try {
