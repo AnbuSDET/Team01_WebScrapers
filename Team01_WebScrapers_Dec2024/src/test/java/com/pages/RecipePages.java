@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -27,6 +28,9 @@ public class RecipePages {
 	boolean recipeIDExists = false;
 
 	private List<String> excelAllergyIngredients;
+	
+	private static final Logger logger = Logger.getLogger(RecipePages.class.getName());
+
 
 	List<String> columnNamesAdd = Collections.singletonList("Add");
 	List<String> columnNamesEliminate_LCHF = Collections.singletonList("Eliminate");
@@ -83,6 +87,28 @@ public class RecipePages {
 	public void extractDataFromPages(WebDriver driver) throws Throwable {
 
 		extractRecipes();
+	}
+	
+
+	private void extractRecipes() throws Throwable {
+		int pageIndex = 0;
+		while (true) {
+			pageIndex++;
+			logger.info("Page Number: " + pageIndex);
+			try {
+				List<WebElement> recipeCards = BaseTest.getDriver().findElements(By.className("rcc_recipecard"));
+				logger.info("No_of_recipes: " + recipeCards.size());
+				for (int j = 0; j < recipeCards.size(); j++) {
+					processRecipe(j);
+				}
+			} catch (Exception e) {
+				logger.severe("Error while extracting data: " + e.getMessage());
+				break;
+			}
+			if (!navigateToNextPage()) {
+				break;
+			}
+		}
 	}
 
 	private void processRecipe(int index) throws Throwable {
@@ -152,7 +178,7 @@ public class RecipePages {
 	}
 
 	public void saveToDatabasemethodsWithChecks_LFV(Receipedata dto, String recipeID, String recipeName,
-			boolean LFVEliminate, boolean LFVAdd, boolean LFVnotFullyVegan, boolean LFVreceipesToavoid, boolean Allergy,
+			boolean LFVEliminate, boolean LFVAdd, boolean LFVnotFullyVegan,boolean Allergy, boolean LFVreceipesToavoid, 
 			List<String> webIngredients) throws Throwable {
 		try {
 			synchronized (lock) {
@@ -290,28 +316,7 @@ public class RecipePages {
 		return webIngredients;
 	}
 
-	private void extractRecipes() throws Throwable {
-		System.out.println("Inside the Extract pages");
-		int pageIndex = 0;
-		while (true) {
-			pageIndex++;
-
-			try {
-				List<WebElement> recipeCards = BaseTest.getDriver().findElements(By.className("rcc_recipecard"));
-
-				for (int j = 0; j < recipeCards.size(); j++) {
-					System.out.println("recipeCards" + recipeCards.size());
-					processRecipe(j);
-				}
-			} catch (Exception e) {
-				break;
-			}
-			if (!navigateToNextPage()) {
-				break;
-			}
-		}
-	}
-
+	
 	private boolean navigateToNextPage() throws Throwable {
 		try {
 			WebElement nextPageIndex = BaseTest.getDriver()
