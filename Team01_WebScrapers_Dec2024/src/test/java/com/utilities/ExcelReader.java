@@ -59,7 +59,7 @@ public class ExcelReader {
 	                }
 	            }
 	        } finally {
-	            lock.unlock();
+	           lock.unlock();
 	        }
 
 	        return allColumnsData;

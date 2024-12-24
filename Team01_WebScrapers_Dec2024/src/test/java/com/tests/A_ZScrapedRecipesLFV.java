@@ -2,7 +2,6 @@ package com.tests;
 
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
-
 import java.time.Duration;
 
 import org.openqa.selenium.By;
@@ -11,24 +10,26 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
-
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import com.baseclass.BaseTest;
 
-import com.pages.Recipes_LCHFPage;
+import com.pages.Recipes_LFVPage;
 
-public class A_ZScrapedRecipesLCHF {
+public class A_ZScrapedRecipesLFV {
 
-	private Recipes_LCHFPage lchfPage;
+	private Recipes_LFVPage homePage;
 
 	@BeforeMethod
 	public void setup() throws Throwable {
 		BaseTest.browsersetup();
-
-		lchfPage = new Recipes_LCHFPage();
-		lchfPage.readExcel();
+		homePage = new Recipes_LFVPage();
+		homePage.readExcel();
 
 	}
 
@@ -40,12 +41,11 @@ public class A_ZScrapedRecipesLCHF {
 				{ "U" }, { "V" }, { "W" }, { "X" }, { "Y" }, { "Z" } };
 	}
 
-	@Test(priority = 1, dataProvider = "alphabetDataProvider")
+	@Test(dataProvider = "alphabetDataProvider")
 	public void clickAlphabetLink(String alphabet) throws Throwable {
 		waitForElementToBeClickable(By.xpath("//a[text()='" + alphabet + "']")).click();
 		System.out.println("Clicked on alphabet: " + alphabet);
-
-		lchfPage.extractDataFromPages(BaseTest.getDriver(), alphabet);
+		homePage.extractDataFromPages(BaseTest.getDriver());
 
 	}
 

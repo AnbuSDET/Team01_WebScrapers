@@ -6,22 +6,29 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-
 public class DatabaseUtils {
 	private static Connection dbConnection;
 
 	private static final Logger logger = Logger.getLogger(DatabaseUtils.class.getName());
+
+	private static final String URL = "jdbc:postgresql://localhost:5432/recipescraping_db";
+	private static final String USER = "postgres";
+	private static final String PASSWORD = "";
+
+	public static Connection getConnection() throws SQLException {
+		return DriverManager.getConnection(URL, USER, PASSWORD);
+	}
 
 	public static void initializeDBConnection() throws Throwable {
 		String dbUrl = PropertyFileReader.getGlobalValue("dbUrl");
 		String dbUsername = PropertyFileReader.getGlobalValue("dbUsername");
 		String dbPassword = PropertyFileReader.getGlobalValue("dbPassword");
 		dbConnection = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
-		
+
 	}
 
 	public static void createTable(String tableName) {
-		String createTableSQL = "CREATE TABLE IF NOT EXISTS " + tableName + " (" + "recipe_id VARCHAR(50), "
+		String createTableSQL = "CREATE TABLE IF NOT EXISTS " + tableName + " (" + "recipe_id VARCHAR(50) PRIMARY KEY, "
 				+ "recipe_name VARCHAR(255), " + "recipe_category VARCHAR(100), " + "food_category VARCHAR(100), "
 				+ "ingredients TEXT, " + "preparation_time VARCHAR(50), " + "cooking_time VARCHAR(50), "
 				+ "recipe_tags TEXT, " + "no_of_servings VARCHAR(50), " + "cuisine_category VARCHAR(100), "
