@@ -3,12 +3,13 @@
 <suite name="Failed suite [Default suite]" guice-stage="DEVELOPMENT">
   <test thread-count="5" name="Default test(failed)">
     <classes>
-      <class name="com.tests.A_ZScrapedRecipesLFV">
+      <class name="com.tests.ScrapingRecipes">
         <methods>
-          <include name="clickAlphabetLink" invocation-numbers="16 17 18 6 10 11 12 13 14 15"/>
-          <include name="main1"/>
+          <include name="tearDown"/>
+          <include name="clickAlphabetLink"/>
+          <include name="setup"/>
         </methods>
-      </class> <!-- com.tests.A_ZScrapedRecipesLFV -->
+      </class> <!-- com.tests.ScrapingRecipes -->
     </classes>
   </test> <!-- Default test(failed) -->
 </suite> <!-- Failed suite [Default suite] -->

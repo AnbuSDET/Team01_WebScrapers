@@ -24,7 +24,7 @@ public class A_ZScrapedRecipesLFV {
 
 	private Recipes_LFVPage homePage;
 
-	@BeforeSuite
+	@BeforeClass
 	public void main1() throws Throwable
 	{
 		BaseTest.browsersetup();
@@ -76,7 +76,7 @@ public class A_ZScrapedRecipesLFV {
 		return wait.until(ExpectedConditions.elementToBeClickable(locator));
 	}
 
-	//@AfterMethod
+	@AfterMethod
 	public void tearDown() {
 		BaseTest.tearDown();
 	}

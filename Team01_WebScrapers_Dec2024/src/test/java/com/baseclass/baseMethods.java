@@ -10,25 +10,15 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 
+import com.recipe.LFV_Add;
+import com.recipe.Receipedata;
 import com.tests.A_ZScrapedRecipesLFV;
-
-import recipe.LFV_Add;
-import recipe.Receipedata;
 
 
 public class baseMethods  {			
 	
 	String alphabetPageTitle = "";	
 	
-	
-	public List<String> AddIngredients(List<String>excelAddingredients,List<String> webIngredients)
-	{
-		ArrayList<String> addIngredients = new ArrayList<>();		
-		addIngredients.addAll(excelAddingredients)	;
-		addIngredients.addAll(webIngredients);
-		return addIngredients;
-	}
-		
 	
 	public boolean eliminateRecipe(List<String> excelIngredients, List<String> webIngredients) {
 		
@@ -37,12 +27,12 @@ public class baseMethods  {
 	        for (String excelIngredient : excelSet) {
 	            if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) {
 	                // Found a match, eliminate the recipe
-	                return false;
+	                return true;
 	            }
 	        }
 	    }
 	    // No matches found, keep the recipe
-	    return true;
+	    return false;
 	}
 	
 
@@ -60,33 +50,6 @@ public class baseMethods  {
 	    return false;
 	}
 	
-    public boolean notFullyVegan(List<String> excelIngredients, List<String> webIngredients) {
-		
-	    Set<String> excelSet = new HashSet<>(excelIngredients);
-	    for (String webIngredient : webIngredients) {
-	        for (String excelIngredient : excelSet) {
-	            if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) {	               
-	                return true;
-	            }
-	        }
-	    }
-	    
-	    return false;
-	}
-	
-public boolean receipesToavoid(List<String> excelIngredients, List<String> webIngredients) {
-		
-	    Set<String> excelSet = new HashSet<>(excelIngredients);
-	    for (String webIngredient : webIngredients) {
-	        for (String excelIngredient : excelSet) {
-	            if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) {	               
-	                return false;
-	            }
-	        }
-	    }
-	    
-	    return true;
-	}
 	
 	public String getRecipeCategory(Receipedata DTO) throws Throwable {
 		String recipeCategory;
@@ -338,7 +301,7 @@ public boolean receipesToavoid(List<String> excelIngredients, List<String> webIn
 			addDTO.setNutrient_values(eliminateDTO.getNutrient_values());
 			addDTO.setNo_of_servings(eliminateDTO.getNo_of_servings());
 			addDTO.setRecipe_Description(eliminateDTO.getRecipe_Description());
-			
+			addDTO.setRecipe_URL(eliminateDTO.getRecipe_URL());		
 		} catch (NoSuchElementException e) {
 			System.out.println("copyData :: "+e.getLocalizedMessage());
 		}

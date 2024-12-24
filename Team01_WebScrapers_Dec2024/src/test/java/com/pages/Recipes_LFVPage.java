@@ -22,6 +22,8 @@ import org.testng.annotations.Test;
 
 import com.baseclass.BaseTest;
 import com.baseclass.baseMethods;
+import com.recipe.LFV_Add;
+import com.recipe.Receipedata;
 import com.tests.A_ZScrapedRecipesLFV;
 import com.utilities.DatabaseUtils;
 import com.utilities.ExcelReader;
@@ -30,8 +32,6 @@ import com.utilities.ExcelValueCheck;
 import com.utilities.ExcelWriter;
 import com.utilities.PropertyFileReader;
 
-import recipe.LFV_Add;
-import recipe.Receipedata;
 import org.apache.commons.beanutils.BeanUtils;
 
 public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
@@ -83,6 +83,7 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 	}
 
 	public void extractDataFromPages(WebDriver driver) throws Throwable {
+		System.out.println("Testing");
 		this.driver = driver;
 		extractRecipes();
 	}
@@ -150,9 +151,9 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 				
 				boolean LFVAdd = basemethods.addIngredients(excelVeganIngredients,webIngredients);							
 				
-				boolean LFVnotFullyVegan=basemethods.notFullyVegan(excelNotFullyVeganIngredients, webIngredients);
+				boolean LFVnotFullyVegan=basemethods.addIngredients(excelNotFullyVeganIngredients, webIngredients);
 				
-				boolean LFVreceipesToavoid=basemethods.receipesToavoid(excelRecipeToAvoidList, webIngredients);
+				boolean LFVreceipesToavoid=basemethods.eliminateRecipe(excelRecipeToAvoidList, webIngredients);
 				
 				
 				if (LFVEliminate && !RecipeIDexists) {
@@ -172,10 +173,8 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 					LFV_Add addObj = new LFV_Add();
 					// Coping the values from DTO for LVF Add table
 					addObj = basemethods.copyData(DTO, addObj);
-					synchronized (lock) {
-						StringBuilder build = new StringBuilder();
-						build.append(String.join(",", webIngredients));
-						DTO.setIngredients(build.toString());
+					synchronized (lock) {	
+						DTO.setIngredients(String.join(",", webIngredients));						
 						//System.out.println("LFV Add :: Receipe Object brfore Save:" + addObj);
 						Session addSession = sessionFactory.openSession();
 						addSession.beginTransaction();
@@ -274,7 +273,7 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 
 	private List<String> extractIngredients() throws Throwable {
 		List<WebElement> ingredientsList = BaseTest.getDriver()
-				.findElements(By.xpath("//div[@id='rcpinglist']//span[@itemprop='recipeIngredient']//a/span"));
+				.findElements(By.xpath("//div[@id='rcpinglist']"));
 		List<String> webIngredients = new ArrayList<>();
 
 		for (WebElement ingredient : ingredientsList) {

@@ -17,7 +17,7 @@ public class BaseTest {
 
 	    public static void browsersetup() throws Throwable {
 	        ChromeOptions options = new ChromeOptions();
-	        options.addArguments("--headless"); // Uncomment if you want to run in headless mode
+	        //options.addArguments("--headless"); // Uncomment if you want to run in headless mode
 	        options.addArguments("--disable-popup-blocking");
 	        options.addArguments("--disable-notifications");
 	        options.addArguments("--disable-extensions");

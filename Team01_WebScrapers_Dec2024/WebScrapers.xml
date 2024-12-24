@@ -1,0 +1,11 @@
+
+<suite name="Team01_WebScrapers" parallel="methods" thread-count="5">
+
+    <test name="ReceipeScraping">
+        <parameter name="browser" value="chrome"/>
+        <classes>
+            <class name="tests.ScrapingRecipes.java"/>
+        </classes>
+    </test> <!-- Test -->
+
+</suite> <!-- Suite -->
