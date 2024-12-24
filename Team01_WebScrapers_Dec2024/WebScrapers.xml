@@ -1,11 +1,9 @@
 
-<suite name="Team01_WebScrapers" parallel="methods" thread-count="5">
-
-    <test name="ReceipeScraping">
-        <parameter name="browser" value="chrome"/>
-        <classes>
-            <class name="tests.ScrapingRecipes.java"/>
-        </classes>
-    </test> <!-- Test -->
-
-</suite> <!-- Suite -->
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Suite" parallel="classes" thread-count="26">
+  <test name="Test">
+    <classes>
+      <class name="com.tests.ScrapingRecipes.java"/>     
+    </classes>
+  </test>
+</suite>

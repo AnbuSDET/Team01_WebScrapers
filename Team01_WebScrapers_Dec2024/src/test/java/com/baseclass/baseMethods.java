@@ -25,14 +25,15 @@ public class baseMethods  {
 	    Set<String> excelSet = new HashSet<>(excelIngredients);
 	    for (String webIngredient : webIngredients) {
 	        for (String excelIngredient : excelSet) {
-	            if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) {
+	        	if (webIngredient.toLowerCase().contains(excelIngredient.toLowerCase())) 
+	             {
 	                // Found a match, eliminate the recipe
-	                return true;
+	                return false;
 	            }
 	        }
 	    }
 	    // No matches found, keep the recipe
-	    return false;
+	    return true;
 	}
 	
 

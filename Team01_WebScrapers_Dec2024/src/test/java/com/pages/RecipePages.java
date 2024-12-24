@@ -36,10 +36,13 @@ public class RecipePages {
 
 	// private static final Logger logger =
 	// Logger.getLogger(Recipes_LCHFPage.class.getName());
+	private List<String> excelAllergyIngredients;
 
 	List<String> columnNamesAdd = Collections.singletonList("Add");
 	List<String> columnNamesEliminate_LCHF = Collections.singletonList("Eliminate");
 	List<String> columnNamesFoodProcessing = Collections.singletonList("Food Processing");
+	List<String> columnNamesAllergy = Collections.singletonList("Eliminate"); 
+	
 	private List<String> excelVeganIngredients;
 	private List<String> excelNotFullyVeganIngredients;
 	private List<String> excelEliminateIngredients = new ArrayList<>();
@@ -81,14 +84,9 @@ public class RecipePages {
 					columnNamesEliminate_LFV, inputDataPath);
 			excelRecipeToAvoidList = ExcelReader.getDataFromExcel("Final list for LFV Elimination ",
 					columnNamesRecipeToAvoid, inputDataPath);
-			// excelRecipeToAvoidList = ExcelReader.getDataFromExcel("Allergies",
-			// columnNameAllergies,
-			// inputDataPath);
-			System.out.println("Recipe to Avoid List: " + excelRecipeToAvoidList);
-
-			System.out.println("Add Ingredients List: " + excelVeganIngredients);
-			System.out.println("Not Fully Vegan Ingredients List: " + excelNotFullyVeganIngredients);
-			System.out.println("Eliminate Ingredients List: " + excelEliminateIngredients);
+			excelAllergyIngredients = ExcelReader.getDataFromExcel("Final List for Allergies", columnNamesAllergy,
+					inputDataPath);
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -97,7 +95,7 @@ public class RecipePages {
 
 	public void extractDataFromPages(WebDriver driver) throws Throwable {
 		this.driver = driver;
-		System.out.println("Testing");
+		
 		extractRecipes();
 	}
 
@@ -105,7 +103,7 @@ public class RecipePages {
 		
 		System.out.println("Inside the Process recipe pages");
 		List<WebElement> recipeCards = BaseTest.getDriver().findElements(By.className("rcc_recipecard"));
-		System.out.println(" Receipe Size:" + recipeCards.size());
+		
 
 		if (index < recipeCards.size()) {
 			WebElement recipeCard = recipeCards.get(index);
@@ -113,7 +111,7 @@ public class RecipePages {
 			// Getting recipe id
 			String recipeID = recipeCard.getAttribute("id");
 			String id = recipeID.replaceAll("[^0-9]", "");
-			System.out.println("Recipe Id: " + id);
+			
 
 			// Getting recipe name
 			WebElement recipeNameElement = recipeCard.findElement(By.xpath(".//span[@class='rcc_recipename']/a"));
@@ -135,10 +133,13 @@ public class RecipePages {
 			DatabaseUtils.createTable("LCHFAdd");
 			DatabaseUtils.createTable("LCHFEliminate");
 			DatabaseUtils.createTable("LCHFFoodProcessing");
+			DatabaseUtils.createTable("LCHFAllergy");
 			DatabaseUtils.createTable("LFV_Elimination");
 			DatabaseUtils.createTable("LFV_Add");
 			DatabaseUtils.createTable("LFV_NotFullyVegan");
 			DatabaseUtils.createTable("LFV_ReceipesToAvoid");
+			DatabaseUtils.createTable("LFV_Allergies");
+			
 
 			List<String> webIngredients = extractIngredients();
 
@@ -147,7 +148,10 @@ public class RecipePages {
 			boolean lchfAdd = basemethods.addIngredients(excellchfAddIngredients, webIngredients);
 
 			boolean lchfFoodProcessing = basemethods.addIngredients(excellchfFoodProcessingIngredients, webIngredients);
-
+			
+			boolean lchfAllergy=basemethods.eliminateRecipe(excelAllergyIngredients, webIngredients);
+			
+			
 			boolean LFVEliminate = basemethods.eliminateRecipe(excelEliminateIngredients, webIngredients);
 
 			boolean LFVAdd = basemethods.addIngredients(excelVeganIngredients, webIngredients);
@@ -155,12 +159,14 @@ public class RecipePages {
 			boolean LFVnotFullyVegan = basemethods.addIngredients(excelNotFullyVeganIngredients, webIngredients);
 
 			boolean LFVreceipesToavoid = basemethods.eliminateRecipe(excelRecipeToAvoidList, webIngredients);
+			
+			boolean LFVAllergy=basemethods.eliminateRecipe(excelAllergyIngredients, webIngredients);
+			
 
-			saveToDatabasemethodsWithChecks_LCHF(dto, recipeID, recipeName, lchfEliminate, lchfAdd, lchfFoodProcessing,
+			saveToDatabasemethodsWithChecks_LCHF(dto, recipeID, recipeName, lchfEliminate, lchfAdd, lchfFoodProcessing,lchfAllergy,
 					webIngredients);
 
-			saveToDatabasemethodsWithChecks_LFV(dto, recipeID, recipeName, LFVEliminate, LFVAdd, LFVnotFullyVegan,
-					LFVreceipesToavoid, webIngredients);
+			saveToDatabasemethodsWithChecks_LFV(dto, recipeID, recipeName, LFVEliminate, LFVAdd, LFVnotFullyVegan,LFVreceipesToavoid,LFVAllergy, webIngredients);
 
 			retryNavigation();
 
@@ -172,7 +178,7 @@ public class RecipePages {
 	
 
 	public void saveToDatabasemethodsWithChecks_LFV(Receipedata dto, String recipeID, String recipeName,
-			boolean LFVEliminate, boolean LFVAdd, boolean LFVnotFullyVegan, boolean LFVreceipesToavoid,
+			boolean LFVEliminate, boolean LFVAdd, boolean LFVnotFullyVegan, boolean LFVreceipesToavoid,boolean LFVAllergy,
 			List<String> webIngredients) throws Throwable {
 		try {
 			synchronized (lock) {
@@ -203,6 +209,15 @@ public class RecipePages {
 						}
 					}
 				}
+				if (LFVEliminate)  {
+					if(LFVAdd) {
+						if(LFVAllergy) {					
+						
+				    saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LFV_Allergies", 
+				                                "LFV_Allergies", webIngredients);
+				}
+				}
+				}
 			}
 		} catch (SQLException e) {
 			if (e.getMessage().contains("duplicate key value violates unique constraint")) {
@@ -216,7 +231,7 @@ public class RecipePages {
 	}
 
 	private void saveToDatabasemethodsWithChecks_LCHF(Receipedata dto, String recipeID, String recipeName,
-			boolean lchfEliminate, boolean lchfAdd, boolean lchfFoodProcessing, List<String> webIngredients)
+			boolean lchfEliminate, boolean lchfAdd, boolean lchfFoodProcessing,boolean Allergy, List<String> webIngredients)
 			throws SQLException {
 		try {
 			synchronized (lock) {
@@ -235,6 +250,14 @@ public class RecipePages {
 							saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFFoodProcessing",
 									"LCHFFoodProcessing", webIngredients);
 						}
+					}
+				}
+				if (lchfEliminate) {
+					if(lchfAdd) {
+						if(Allergy) {
+				    saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFAllergy", 
+				                                "LCHFAllergy", webIngredients);
+				}
 					}
 				}
 			}

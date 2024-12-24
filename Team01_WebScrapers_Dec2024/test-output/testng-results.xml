@@ -1,47 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testng-results ignored="0" total="2" passed="2" failed="0" skipped="0">
+<testng-results ignored="0" total="1" passed="1" failed="0" skipped="0">
   <reporter-output>
   </reporter-output>
-  <suite started-at="2024-12-23T19:59:18 EST" name="Default suite" finished-at="2024-12-23T20:36:14 EST" duration-ms="2216634">
+  <suite started-at="2024-12-24T10:10:56 EST" name="Default suite" finished-at="2024-12-24T10:53:26 EST" duration-ms="2550208">
     <groups>
     </groups>
-    <test started-at="2024-12-23T19:59:18 EST" name="Default test" finished-at="2024-12-23T20:36:14 EST" duration-ms="2216634">
+    <test started-at="2024-12-24T10:10:56 EST" name="Default test" finished-at="2024-12-24T10:53:26 EST" duration-ms="2550208">
       <class name="com.tests.ScrapingRecipes">
-        <test-method is-config="true" signature="setup()[pri:0, instance:com.tests.ScrapingRecipes@43df23d3]" started-at="2024-12-23T19:59:18 EST" name="setup" finished-at="2024-12-23T19:59:37 EST" duration-ms="19472" status="PASS">
+        <test-method is-config="true" signature="setup()[pri:0, instance:com.tests.ScrapingRecipes@43df23d3]" started-at="2024-12-24T10:10:56 EST" name="setup" finished-at="2024-12-24T10:11:14 EST" duration-ms="18073" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- setup -->
-        <test-method is-config="true" signature="setup()[pri:0, instance:com.tests.ScrapingRecipes@43df23d3]" started-at="2024-12-23T19:59:18 EST" name="setup" finished-at="2024-12-23T19:59:34 EST" duration-ms="16703" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- setup -->
-        <test-method signature="clickAlphabetLink(java.lang.String)[pri:0, instance:com.tests.ScrapingRecipes@43df23d3]" started-at="2024-12-23T19:59:34 EST" name="clickAlphabetLink" data-provider="alphabetDataProvider" finished-at="2024-12-23T20:06:44 EST" duration-ms="429419" status="PASS">
+        <test-method signature="clickAlphabetLink(java.lang.String)[pri:0, instance:com.tests.ScrapingRecipes@43df23d3]" started-at="2024-12-24T10:11:14 EST" name="clickAlphabetLink" data-provider="alphabetDataProvider" finished-at="2024-12-24T10:53:20 EST" duration-ms="2525945" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[B]]>
+                <![CDATA[G]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
         </test-method> <!-- clickAlphabetLink -->
-        <test-method signature="clickAlphabetLink(java.lang.String)[pri:0, instance:com.tests.ScrapingRecipes@43df23d3]" started-at="2024-12-23T19:59:37 EST" name="clickAlphabetLink" data-provider="alphabetDataProvider" finished-at="2024-12-23T20:36:12 EST" duration-ms="2194880" status="PASS">
-          <params>
-            <param index="0">
-              <value>
-                <![CDATA[A]]>
-              </value>
-            </param>
-          </params>
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- clickAlphabetLink -->
-        <test-method is-config="true" signature="tearDown()[pri:0, instance:com.tests.ScrapingRecipes@43df23d3]" started-at="2024-12-23T20:06:44 EST" name="tearDown" finished-at="2024-12-23T20:06:47 EST" duration-ms="3281" status="PASS">
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- tearDown -->
-        <test-method is-config="true" signature="tearDown()[pri:0, instance:com.tests.ScrapingRecipes@43df23d3]" started-at="2024-12-23T20:36:12 EST" name="tearDown" finished-at="2024-12-23T20:36:14 EST" duration-ms="2060" status="PASS">
+        <test-method is-config="true" signature="tearDown()[pri:0, instance:com.tests.ScrapingRecipes@43df23d3]" started-at="2024-12-24T10:53:20 EST" name="tearDown" finished-at="2024-12-24T10:53:26 EST" duration-ms="5873" status="PASS">
           <reporter-output>
           </reporter-output>
         </test-method> <!-- tearDown -->
