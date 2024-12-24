@@ -1,54 +1,42 @@
 package com.pages;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.cfg.Configuration;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.testng.annotations.BeforeClass;
 
+import com.baseclass.BaseTest;
 import com.baseclass.baseMethods;
-import com.recipe.LFV_Add;
 import com.recipe.Receipedata;
-import com.tests.ScrapingRecipes;
 import com.utilities.DatabaseUtils;
 import com.utilities.ExcelReader;
 import com.utilities.PropertyFileReader;
 
-public class RecipePages extends ScrapingRecipes {
+public class RecipePages {
 
-	private WebDriver driver;
 	private List<String> excellchfAddIngredients;
 	private List<String> excellchfEliminateIngredients;
 	private List<String> excellchfFoodProcessingIngredients;
 	Receipedata dto = new Receipedata();
-	List<String> webIngredients = extractIngredients();
-	private static final SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
-	boolean RecipeIDexists = false;
-	private List<String> excelAllergyIngredients = new ArrayList<>();
-	List<String> columnNamesAllergy = Collections.singletonList("Allergies (Bonus points)");
+	boolean recipeIDExists = false;
 
-	private static final Logger logger = Logger.getLogger(RecipePages.class.getName());
+	private List<String> excelAllergyIngredients;
 
 	List<String> columnNamesAdd = Collections.singletonList("Add");
 	List<String> columnNamesEliminate_LCHF = Collections.singletonList("Eliminate");
 	List<String> columnNamesFoodProcessing = Collections.singletonList("Food Processing");
+	List<String> columnNamesAllergy = Collections.singletonList("Eliminate");
+
 	private List<String> excelVeganIngredients;
 	private List<String> excelNotFullyVeganIngredients;
 	private List<String> excelEliminateIngredients = new ArrayList<>();
 	private String recipeName;
-
 	String alphabetPageTitle = "";
 	List<String> unmatchedLFVIngredients;
 
@@ -62,7 +50,6 @@ public class RecipePages extends ScrapingRecipes {
 
 	baseMethods basemethods = new baseMethods();
 
-	@BeforeClass
 	public void readExcelLFV_LCHF() throws Throwable {
 		String userDir = System.getProperty("user.dir");
 		String getPathread = PropertyFileReader.getGlobalValue("inputExcelPath");
@@ -75,9 +62,6 @@ public class RecipePages extends ScrapingRecipes {
 					columnNamesEliminate_LCHF, inputDataPath);
 			excellchfFoodProcessingIngredients = ExcelReader.getDataFromExcel("Final list for LCHFElimination ",
 					columnNamesFoodProcessing, inputDataPath);
-			logger.info("LCHF Add: " + excellchfAddIngredients);
-			logger.info("LCHF Eliminate: " + excellchfEliminateIngredients);
-			logger.info("LCHF Food Processing: " + excellchfFoodProcessingIngredients);
 
 			excelVeganIngredients = ExcelReader.getDataFromExcel("Final list for LFV Elimination ", columnNamesVegan,
 					inputDataPath);
@@ -87,14 +71,9 @@ public class RecipePages extends ScrapingRecipes {
 					columnNamesEliminate_LFV, inputDataPath);
 			excelRecipeToAvoidList = ExcelReader.getDataFromExcel("Final list for LFV Elimination ",
 					columnNamesRecipeToAvoid, inputDataPath);
-			// excelRecipeToAvoidList = ExcelReader.getDataFromExcel("Allergies",
-			// columnNameAllergies,
-			// inputDataPath);
-			System.out.println("Recipe to Avoid List: " + excelRecipeToAvoidList);
+			excelAllergyIngredients = ExcelReader.getDataFromExcel("Final List for Allergies", columnNamesAllergy,
+					inputDataPath);
 
-			System.out.println("Add Ingredients List: " + excelVeganIngredients);
-			System.out.println("Not Fully Vegan Ingredients List: " + excelNotFullyVeganIngredients);
-			System.out.println("Eliminate Ingredients List: " + excelEliminateIngredients);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -102,118 +81,52 @@ public class RecipePages extends ScrapingRecipes {
 	}
 
 	public void extractDataFromPages(WebDriver driver) throws Throwable {
-		this.driver = driver;
+
 		extractRecipes();
 	}
 
 	private void processRecipe(int index) throws Throwable {
-		List<WebElement> recipeCards = driver.findElements(By.className("rcc_recipecard"));
-		logger.info("Number of recipe cards found: " + recipeCards.size());
 
-		if (index < 0 || index >= recipeCards.size()) {
-			logger.warning("Index out of bounds: " + index + " for recipe list of size " + recipeCards.size());
-			return;
-		}
+		System.out.println("Inside the Process recipe pages");
+		List<WebElement> recipeCards = BaseTest.getDriver().findElements(By.className("rcc_recipecard"));
 
-		WebElement recipeCard = recipeCards.get(index);
-		String recipeID = recipeCard.getAttribute("id").replaceAll("[^0-9]", "");
+		if (index < recipeCards.size()) {
+			WebElement recipeCard = recipeCards.get(index);
 
-		WebElement recipeNameElement = recipeCard.findElement(By.xpath(".//span[@class='rcc_recipename']/a"));
-		String recipeName = recipeNameElement.getText();
+			// Getting recipe id
+			String recipeID = recipeCard.getAttribute("id");
+			String id = recipeID.replaceAll("[^0-9]", "");
 
-		if (recipeName == null || recipeName.trim().isEmpty()) {
-			logger.warning("Recipe name is null or empty for index: " + index);
-			return;
-		}
+			// Getting recipe name
+			WebElement recipeNameElement = recipeCard.findElement(By.xpath(".//span[@class='rcc_recipename']/a"));
+			recipeName = recipeNameElement.getText();
+			System.out.println("Recipe Name: " + recipeName);
 
-		dto.setRecipe_ID(recipeID);
-		dto.setRecipe_Name(recipeName);
+			// Clicking into the recipe link
+			recipeNameElement.click();
+			dto.setRecipe_ID(id);
+			dto.setRecipe_Name(recipeName);
+			dto = extractRecipeDetails();
 
-		Session session = sessionFactory.openSession();
-
-		dto = session.find(Receipedata.class, recipeID);
-
-		System.out.println("ExistigReceipe Obj:" + dto);
-
-		if (null != dto) {
-			System.out.println("Receipe ID :" + recipeID + " already exists in DB");
-			RecipeIDexists = true;
-		} else {
-			System.out.println("Receipe ID :" + recipeID + " NOT exists in DB");
-			dto = new Receipedata();
-		}
-
-		logger.info("Processing recipe: " + recipeName + " (ID: " + recipeID + ")");
-
-		try {
 			DatabaseUtils.initializeDBConnection();
-			logger.info("Database connection established successfully.");
 
 			DatabaseUtils.createTable("LCHFAdd");
 			DatabaseUtils.createTable("LCHFEliminate");
 			DatabaseUtils.createTable("LCHFFoodProcessing");
 			DatabaseUtils.createTable("LCHFAllergy");
+			DatabaseUtils.createTable("LFV_Elimination");
+			DatabaseUtils.createTable("LFV_Add");
+			DatabaseUtils.createTable("LFV_NotFullyVegan");
+			DatabaseUtils.createTable("LFV_ReceipesToAvoid");
+			DatabaseUtils.createTable("LFV_Allergies");
 
-			recipeNameElement.click();
-
-			dto = extractRecipeDetails();
+			List<String> webIngredients = extractIngredients();
 
 			boolean lchfEliminate = basemethods.eliminateRecipe(excellchfEliminateIngredients, webIngredients);
+
 			boolean lchfAdd = basemethods.addIngredients(excellchfAddIngredients, webIngredients);
+
 			boolean lchfFoodProcessing = basemethods.addIngredients(excellchfFoodProcessingIngredients, webIngredients);
-			boolean lchfAllergies = basemethods.eliminateRecipe(excelAllergyIngredients, webIngredients);
-
-			saveToDatabasemethodsWithChecks(dto, recipeID, recipeName, lchfEliminate, lchfAdd, lchfFoodProcessing,
-					lchfAllergies, webIngredients);
-
-
-			retryNavigation();
-
-		} catch (Exception e) {
-			logger.severe("Error in processRecipe: " + e.getMessage());
-		} finally {
-			DatabaseUtils.closeDBConnection();
-		}
-
-		// ************************************************** LFV Scraping
-		// ***************************************//
-
-		try {
-
-			// Clicking into the recipe link
-
-			Receipedata DTO = new Receipedata();
-
-			DTO.setRecipe_ID(recipeID);
-			DTO.setRecipe_Name(recipeName);
-			DTO.setRecipe_Category(basemethods.getRecipeCategory(DTO));
-			DTO.setTag(basemethods.getTags(DTO));
-			DTO.setFood_Category(basemethods.getFoodCategory(DTO));
-			DTO.setCuisine_category(basemethods.getcuisineCategory(DTO));
-			DTO.setPreparation_Time(basemethods.getPreparationTime(DTO));
-			DTO.setPreparation_method(basemethods.getPreparationMethod(DTO));
-			DTO.setCooking_Time(basemethods.getCookingTime(DTO));
-			DTO.setNutrient_values(basemethods.getNutrientValues(DTO));
-			DTO.setNo_of_servings(basemethods.getNoOfServings(DTO));
-			DTO.setRecipe_Description(basemethods.getRecipeDescription(DTO));
-			DTO.setRecipe_URL(basemethods.getRecipeURL(DTO));
-
-			Session session1 = sessionFactory.openSession();
-
-			Receipedata receipe = new Receipedata();
-
-			receipe = session1.find(Receipedata.class, recipeID);
-
-			boolean RecipeIDexists = false;
-			System.out.println("ExistigReceipe Obj:" + receipe);
-
-			if (null != receipe) {
-				System.out.println("Receipe ID :" + recipeID + " already exists in DB");
-				RecipeIDexists = true;
-			} else {
-				System.out.println("Receipe ID :" + recipeID + " NOT exists in DB");
-				receipe = new Receipedata();
-			}
 
 			boolean LFVEliminate = basemethods.eliminateRecipe(excelEliminateIngredients, webIngredients);
 
@@ -222,162 +135,88 @@ public class RecipePages extends ScrapingRecipes {
 			boolean LFVnotFullyVegan = basemethods.addIngredients(excelNotFullyVeganIngredients, webIngredients);
 
 			boolean LFVreceipesToavoid = basemethods.eliminateRecipe(excelRecipeToAvoidList, webIngredients);
-			
-			boolean LFVAllergy=basemethods.eliminateRecipe(excelAllergyIngredients, webIngredients);
 
-			if (LFVEliminate && !RecipeIDexists) {
-				synchronized (lock) {
-					DTO.setIngredients(String.join(",", webIngredients));
-					// System.out.println("LFV Eliminate :: Receipe Object brfore Save:" + receipe);
-					session.beginTransaction();
-					session.save(DTO);
-					session.getTransaction().commit();
-					session.close();
-				}
-			}
+			boolean Allergy = basemethods.eliminateRecipe(excelAllergyIngredients, webIngredients);
 
-			if (!RecipeIDexists && LFVEliminate) {
-				if (LFVAdd) {
+			saveToDatabasemethodsWithChecks_LCHF(dto, recipeID, recipeName, lchfEliminate, lchfAdd, lchfFoodProcessing,
+					Allergy, webIngredients);
 
-					LFV_Add addObj = new LFV_Add();
-					// Coping the values from DTO for LVF Add table
-					addObj = basemethods.copyData(DTO, addObj);
-					synchronized (lock) {
-						DTO.setIngredients(String.join(",", webIngredients));
-						Session addSession = sessionFactory.openSession();
-						addSession.beginTransaction();
-						addSession.save(addObj);
-						addSession.getTransaction().commit();
-						addSession.close();
-					}
-				}
+			saveToDatabasemethodsWithChecks_LFV(dto, recipeID, recipeName, LFVEliminate, LFVAdd, LFVnotFullyVegan,
+					Allergy, LFVreceipesToavoid, webIngredients);
 
-			}
+			retryNavigation();
 
-			if (!RecipeIDexists && LFVEliminate) {
-				if (LFVAdd) {
-					if (LFVnotFullyVegan) {
-
-						try {
-
-							synchronized (lock) {
-								StringBuilder sql2 = new StringBuilder();
-								Connection conn = DatabaseUtils.getConnection();
-								sql2.append(
-										"INSERT INTO LFV_NotFullyVegan (recipe_id, recipe_name, recipe_category, food_category, cuisine_category,"
-												+ "preparation_time, cooking_time, recipe_tags, servings, description, preparation_method, "
-												+ "nutrient_values, ingredients, recipe_url) VALUES (")
-										.append(DTO.getRecipe_ID()).append(DTO.getRecipe_Name())
-										.append(DTO.getRecipe_Category()).append(DTO.getFood_Category())
-										.append(DTO.getCuisine_category()).append(DTO.getPreparation_Time())
-										.append(DTO.getCooking_Time()).append(DTO.getTag())
-										.append(DTO.getNo_of_servings()).append(DTO.getRecipe_Description())
-										.append(DTO.getPreparation_method()).append(DTO.getNutrient_values())
-										.append(String.join(",", webIngredients)).append(DTO.getRecipe_URL())
-										.append(")");
-								PreparedStatement pstmt = conn.prepareStatement(sql2.toString());
-								pstmt.executeUpdate();
-							}
-						} catch (Exception e) {
-							System.out.println("Error writing to DB LFV_NotFullyVegan: " + e.getMessage());
-						}
-					}
-				}
-			}
-			
-			if (!RecipeIDexists && LFVEliminate ) {
-				if(LFVAdd) {
-					if(LFVAllergy) {		
-				try {
-					
-					synchronized (lock) {
-						StringBuilder sql2 = new StringBuilder();
-						Connection conn = DatabaseUtils.getConnection();
-						sql2.append(
-								"INSERT INTO LFV_Allergy (recipe_id, recipe_name, recipe_category, food_category, cuisine_category,"
-								+ "preparation_time, cooking_time, recipe_tags, servings, description, preparation_method, "
-								+ "nutrient_values, ingredients, recipe_url) VALUES (")
-								.append(DTO.getRecipe_ID()).append(DTO.getRecipe_Name())
-								.append(DTO.getRecipe_Category()).append(DTO.getFood_Category())
-								.append(DTO.getCuisine_category()).append(DTO.getPreparation_Time())
-								.append(DTO.getCooking_Time()).append(DTO.getTag()).append(DTO.getNo_of_servings())
-								.append(DTO.getRecipe_Description()).append(DTO.getPreparation_method())
-								.append(DTO.getNutrient_values()).append(String.join(",", webIngredients))
-								.append(DTO.getRecipe_URL()).append(")");
-						PreparedStatement pstmt = conn.prepareStatement(sql2.toString());
-						pstmt.executeUpdate();
-					}
-				} catch (Exception e) {
-					System.out.println("Error writing to DB LFV_Allergy: " + e.getMessage());
-				}
-			}
-				}
-			}
-			
-
-			if (!RecipeIDexists && LFVEliminate) {
-				if (LFVAdd) {
-					if (LFVreceipesToavoid) {
-
-						StringBuilder sql = new StringBuilder();
-						try {
-							synchronized (lock) {
-								Connection conn = DatabaseUtils.getConnection();
-								sql.append(
-										"INSERT INTO LFV_ReceipesToAvoid (recipe_id, recipe_name, recipe_category, food_category, cuisine_category,preparation_time, cooking_time, recipe_tags, servings, description, preparation_method, nutrient_values, ingredients, recipe_url) VALUES (")
-										.append(DTO.getRecipe_ID()).append(DTO.getRecipe_Name())
-										.append(DTO.getRecipe_Category()).append(DTO.getFood_Category())
-										.append(DTO.getCuisine_category()).append(DTO.getPreparation_Time())
-										.append(DTO.getCooking_Time()).append(DTO.getTag())
-										.append(DTO.getNo_of_servings()).append(DTO.getRecipe_Description())
-										.append(DTO.getPreparation_method()).append(DTO.getNutrient_values())
-										.append(DTO.getIngredients()).append(DTO.getRecipe_URL());
-								PreparedStatement pstmt = conn.prepareStatement(sql.toString());
-								pstmt.executeUpdate();
-							}
-						} catch (Exception e) {
-							System.out.println("Error writing to DB LFV_ReceipesToAvoid: " + e.getMessage());
-						}
-					}
-				}
-			}
-
-			int maxRetries = 3;
-			int retryCount = 0;
-			while (retryCount < maxRetries) {
-				try {
-					driver.navigate().back();
-					driver.findElement(By.className("rcc_recipecard")).isDisplayed();
-					return; // Navigation successful, exit retry loop
-				} catch (NoSuchElementException e) {
-					logger.warning("Navigation failed, retrying... (" + (retryCount + 1) + "/" + maxRetries + ")");
-					retryCount++;
-				}
-			}
-			logger.severe("Failed to navigate back after " + maxRetries + " attempts.");
-		} catch (IndexOutOfBoundsException e) {
-			System.out.println("Index " + index + " out of bounds for recipe cards");
-		} catch (Exception e) {
-			System.out.println("Error in processRecipe: " + e.getMessage());
+			DatabaseUtils.closeDBConnection();
 		}
 
 	}
 
-	private void saveToDatabasemethodsWithChecks(Receipedata dto, String recipeID, String recipeName,
-			boolean lchfEliminate, boolean lchfAdd, boolean lchfFoodProcessing,boolean lchfAllergies, List<String> webIngredients)
-			throws SQLException {
+	public void saveToDatabasemethodsWithChecks_LFV(Receipedata dto, String recipeID, String recipeName,
+			boolean LFVEliminate, boolean LFVAdd, boolean LFVnotFullyVegan, boolean LFVreceipesToavoid, boolean Allergy,
+			List<String> webIngredients) throws Throwable {
 		try {
 			synchronized (lock) {
-				if (lchfEliminate && !RecipeIDexists) {
+
+				if (LFVEliminate) {
+
+					saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LFV_Elimination", "LFV_Elimination",
+							webIngredients);
+				}
+				if (LFVEliminate) {
+					if (LFVAdd) {
+						saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LFV_Add", "LFV_Add", webIngredients);
+					}
+				}
+				if (LFVEliminate) {
+					if (LFVAdd) {
+						if (LFVnotFullyVegan) {
+							saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LFV_NotFullyVegan",
+									"LFV_NotFullyVegan", webIngredients);
+						}
+					}
+				}
+				if (LFVEliminate) {
+					if (LFVAdd) {
+						if (LFVreceipesToavoid) {
+							saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LFV_ReceipesToAvoid",
+									"LFV_ReceipesToAvoid", webIngredients);
+						}
+					}
+				}
+				if (LFVEliminate) {
+					if (LFVAdd) {
+						if (Allergy) {
+							saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LFV_Allergies", "LFV_Allergies",
+									webIngredients);
+						}
+					}
+				}
+
+			}
+		} catch (SQLException e) {
+			if (e.getMessage().contains("duplicate key value violates unique constraint")) {
+			} else {
+				throw e;
+			}
+		}
+
+	}
+
+	private void saveToDatabasemethodsWithChecks_LCHF(Receipedata dto, String recipeID, String recipeName,
+			boolean lchfEliminate, boolean lchfAdd, boolean lchfFoodProcessing, boolean Allergy,
+			List<String> webIngredients) throws SQLException {
+		try {
+			synchronized (lock) {
+				if (lchfEliminate) {
 					saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFEliminate", "LCHFEliminate",
 							webIngredients);
 				}
-				if (!RecipeIDexists && lchfEliminate) {
+				if (lchfEliminate) {
 					if (lchfAdd) {
 						saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFAdd", "LCHFAdd", webIngredients);
 					}
 				}
-				if (!RecipeIDexists && lchfEliminate) {
+				if (lchfEliminate) {
 					if (lchfAdd) {
 						if (lchfFoodProcessing) {
 							saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFFoodProcessing",
@@ -385,19 +224,17 @@ public class RecipePages extends ScrapingRecipes {
 						}
 					}
 				}
-				if (!RecipeIDexists && lchfEliminate) {
+				if (lchfEliminate) {
 					if (lchfAdd) {
-						if (lchfAllergies) {
-							saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFAllergies", "LCHFAllergies",
+						if (Allergy) {
+							saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFAllergy", "LCHFAllergy",
 									webIngredients);
 						}
 					}
 				}
 			}
-			
 		} catch (SQLException e) {
 			if (e.getMessage().contains("duplicate key value violates unique constraint")) {
-				logger.warning("Duplicate recipe_id found: " + recipeID + ". Skipping to next recipe.");
 			} else {
 				throw e;
 			}
@@ -410,26 +247,24 @@ public class RecipePages extends ScrapingRecipes {
 				String.join(",", webIngredients), dto.getPreparation_Time(), dto.getCooking_Time(), dto.getTag(),
 				dto.getNo_of_servings(), dto.getCuisine_category(), dto.getRecipe_Description(),
 				dto.getPreparation_method(), dto.getNutrient_values(), dto.getRecipe_URL());
-		logger.info("Recipe saved to " + tableName + " table: " + recipeName + " under category: " + category);
 	}
 
-	private void retryNavigation() {
+	private void retryNavigation() throws Throwable {
 		int maxRetries = 3;
 		int retryCount = 0;
 		while (retryCount < maxRetries) {
 			try {
-				driver.navigate().back();
-				driver.findElement(By.className("rcc_recipecard")).isDisplayed();
+				BaseTest.getDriver().navigate().back();
+				BaseTest.getDriver().findElement(By.className("rcc_recipecard")).isDisplayed();
 				return; // Navigation successful, exit retry loop
 			} catch (NoSuchElementException e) {
-				logger.warning("Navigation failed, retrying... (" + (retryCount + 1) + "/" + maxRetries + ")");
 				retryCount++;
 			}
 		}
-		logger.severe("Failed to navigate back after " + maxRetries + " attempts.");
 	}
 
 	private Receipedata extractRecipeDetails() throws Throwable {
+		System.out.println("Testing");
 		dto.setRecipe_Category(basemethods.getRecipeCategory(dto));
 		dto.setTag(basemethods.getTags(dto));
 		dto.setFood_Category(basemethods.getFoodCategory(dto));
@@ -444,10 +279,8 @@ public class RecipePages extends ScrapingRecipes {
 		return dto;
 	}
 
-	private List<String> extractIngredients() {
-		List<WebElement> ingredientsList = driver
-				// .findElements(By.xpath("//div[@id='rcpinglist']//span[@itemprop='recipeIngredient']//a/span"));
-				.findElements(By.xpath("//div[@id='rcpinglist']"));
+	private List<String> extractIngredients() throws Throwable {
+		List<WebElement> ingredientsList = BaseTest.getDriver().findElements(By.xpath("//div[@id='rcpinglist']"));
 
 		List<String> webIngredients = new ArrayList<>();
 		for (WebElement ingredient : ingredientsList) {
@@ -458,18 +291,19 @@ public class RecipePages extends ScrapingRecipes {
 	}
 
 	private void extractRecipes() throws Throwable {
+		System.out.println("Inside the Extract pages");
 		int pageIndex = 0;
 		while (true) {
 			pageIndex++;
-			logger.info("Page Number: " + pageIndex);
+
 			try {
-				List<WebElement> recipeCards = driver.findElements(By.className("rcc_recipecard"));
-				logger.info("No_of_recipes: " + recipeCards.size());
+				List<WebElement> recipeCards = BaseTest.getDriver().findElements(By.className("rcc_recipecard"));
+
 				for (int j = 0; j < recipeCards.size(); j++) {
+					System.out.println("recipeCards" + recipeCards.size());
 					processRecipe(j);
 				}
 			} catch (Exception e) {
-				logger.severe("Error while extracting data: " + e.getMessage());
 				break;
 			}
 			if (!navigateToNextPage()) {
@@ -478,9 +312,10 @@ public class RecipePages extends ScrapingRecipes {
 		}
 	}
 
-	private boolean navigateToNextPage() {
+	private boolean navigateToNextPage() throws Throwable {
 		try {
-			WebElement nextPageIndex = driver.findElement(By.xpath("//*[@class='rescurrpg']/following-sibling::a"));
+			WebElement nextPageIndex = BaseTest.getDriver()
+					.findElement(By.xpath("//*[@class='rescurrpg']/following-sibling::a"));
 			nextPageIndex.click();
 			return true;
 		} catch (Exception e) {

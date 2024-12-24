@@ -5,11 +5,8 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -18,41 +15,39 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import com.baseclass.BaseTest;
 import com.baseclass.baseMethods;
+import com.recipe.LFV_Add;
+import com.recipe.Receipedata;
 import com.tests.A_ZScrapedRecipesLFV;
 import com.utilities.DatabaseUtils;
 import com.utilities.ExcelReader;
-
 import com.utilities.PropertyFileReader;
-
-import com.recipe.LFV_Add;
-import com.recipe.Receipedata;
-import org.apache.commons.beanutils.BeanUtils;
 
 public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 
-	private WebDriver driver;
+	
 	private List<String> excelVeganIngredients;
 	private List<String> excelNotFullyVeganIngredients;
-	private List<String> excelAllergyIngredients = new ArrayList<>();
-	private List<String> excelEliminateIngredients = new ArrayList<>();
+	private List<String> excelAllergyIngredients;
+	private List<String> excelEliminateIngredients;
+	private List<String> excelRecipeToAvoidList;
+
+	
 	private String recipeName;
 	String alphabetPageTitle = "";
 	List<String> unmatchedLFVIngredients;
 
 	baseMethods basemethods = new baseMethods();
-	private List<String> excelRecipeToAvoidList;
+	
 	private static final Object lock = new Object();
 
 	List<String> columnNamesVegan = Collections.singletonList("Add");
 	List<String> columnNamesNotFullyVegan = Collections.singletonList("To Add ( if not fully vegan)");
 	List<String> columnNamesEliminate = Collections.singletonList("Eliminate");
 	List<String> columnNamesRecipeToAvoid = Collections.singletonList("Recipes to avoid");
-	List<String> columnNamesAllergy = Collections.singletonList("Allergies (Bonus points)");
+	List<String> columnNamesAllergy = Collections.singletonList("Eliminate");
 
 
 	public void readExcel() throws Throwable {
@@ -70,7 +65,7 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 						columnNamesEliminate, inputDataPath);
 				excelRecipeToAvoidList = ExcelReader.getDataFromExcel("Final list for LFV Elimination ",
 						columnNamesRecipeToAvoid, inputDataPath);
-				excelAllergyIngredients = ExcelReader.getDataFromExcel("Allergies (Bonus points)", columnNamesAllergy,
+				excelAllergyIngredients = ExcelReader.getDataFromExcel("Final List for Allergies", columnNamesAllergy,
 						inputDataPath);
 				System.out.println("Recipe to Avoid List: " + excelRecipeToAvoidList);
 
@@ -85,7 +80,6 @@ public class Recipes_LFVPage extends A_ZScrapedRecipesLFV {
 	}
 
 	public void extractDataFromPages(WebDriver driver) throws Throwable {
-		this.driver = driver;
 		extractRecipes();
 	}
 

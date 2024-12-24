@@ -21,13 +21,10 @@ import com.baseclass.BaseTest;
 
 import com.pages.Recipes_LFVPage;
 
-
-
 public class A_ZScrapedRecipesLFV {
 
 	private Recipes_LFVPage homePage;
 
-	
 	@BeforeMethod
 	public void setup() throws Throwable {
 		BaseTest.browsersetup();
@@ -37,9 +34,11 @@ public class A_ZScrapedRecipesLFV {
 	}
 
 	// if you want to run in parallel set it to true
-	@DataProvider(name = "alphabetDataProvider", parallel = false)
+	@DataProvider(name = "alphabetDataProvider", parallel = true)
 	public Object[][] alphabetDataProvider() {
-		return new Object[][] { {"A"}, { "B" },{ "C" },{ "D" }, { "E" } };
+		return new Object[][] { { "A" }, { "B" }, { "C" }, { "D" }, { "E" }, { "F" }, { "G" }, { "H" }, { "I" },
+				{ "J" }, { "K" }, { "L" }, { "M" }, { "N" }, { "O" }, { "P" }, { "Q" }, { "R" }, { "S" }, { "T" },
+				{ "U" }, { "V" }, { "W" }, { "X" }, { "Y" }, { "Z" } };
 	}
 
 	@Test(dataProvider = "alphabetDataProvider")
@@ -56,7 +55,6 @@ public class A_ZScrapedRecipesLFV {
 
 		return wait.until(ExpectedConditions.elementToBeClickable(locator));
 	}
-
 
 	@AfterMethod
 	public void tearDown() {

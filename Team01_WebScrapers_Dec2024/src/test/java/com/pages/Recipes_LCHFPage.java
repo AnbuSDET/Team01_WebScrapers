@@ -3,7 +3,7 @@ package com.pages;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.Collections;
 
 import java.util.List;
@@ -31,17 +31,17 @@ public class Recipes_LCHFPage {
 	private List<String> excellchfAddIngredients;
 	private List<String> excellchfEliminateIngredients;
 	private List<String> excellchfFoodProcessingIngredients;
-	private List<String> excelAllergyIngredients = new ArrayList<>();
+	private List<String> excelAllergyIngredients;
 	private static final Object lock = new Object();
 	Receipedata dto = new Receipedata();
-	boolean recipeIDExists = false;
+
 
 	private static final Logger logger = Logger.getLogger(Recipes_LCHFPage.class.getName());
 
 	List<String> columnNamesAdd = Collections.singletonList("Add");
 	List<String> columnNamesEliminate = Collections.singletonList("Eliminate");
 	List<String> columnNamesFoodProcessing = Collections.singletonList("Food Processing");
-	List<String> columnNamesAllergy = Collections.singletonList("Allergies (Bonus points)");
+	List<String> columnNamesAllergy = Collections.singletonList("Eliminate");
 
 	baseMethods basemethods = new baseMethods();
 
@@ -58,6 +58,8 @@ public class Recipes_LCHFPage {
 					columnNamesEliminate, inputDataPath);
 			excellchfFoodProcessingIngredients = ExcelReader.getDataFromExcel("Final list for LCHFElimination ",
 					columnNamesFoodProcessing, inputDataPath);
+			excelAllergyIngredients = ExcelReader.getDataFromExcel("Final List for Allergies", columnNamesAllergy,
+					inputDataPath);
 			logger.info("LCHF Add: " + excellchfAddIngredients);
 			logger.info("LCHF Eliminate: " + excellchfEliminateIngredients);
 			logger.info("LCHF Food Processing: " + excellchfFoodProcessingIngredients);
@@ -114,8 +116,9 @@ public class Recipes_LCHFPage {
 
 		dto.setRecipe_ID(recipeID);
 		dto.setRecipe_Name(recipeName);
-
+		
 		logger.info("Processing recipe: " + recipeName + " (ID: " + recipeID + ")");
+		
 
 		try {
 			DatabaseUtils.initializeDBConnection();
@@ -153,31 +156,34 @@ public class Recipes_LCHFPage {
 			List<String> webIngredients) throws SQLException {
 		try {
 			synchronized (lock) {
-				if (lchfEliminate && !recipeIDExists) {
+				if (lchfEliminate) {
 					saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFEliminate", "LCHFEliminate",
 							webIngredients);
 				}
-				if (!recipeIDExists && lchfEliminate) {
-					if (lchfAdd) {
+				if (lchfEliminate) {
+					if(lchfAdd) {
 						saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFAdd", "LCHFAdd", webIngredients);
 					}
 				}
-				if (!recipeIDExists && lchfEliminate) {
-					if (lchfAdd) {
-						if (lchfFoodProcessing) {
-							saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFFoodProcessing",
-									"LCHFFoodProcessing", webIngredients);
-						}
+				
+				if (lchfEliminate) {
+					if(lchfAdd) {
+							 if(lchfFoodProcessing) {
+				    saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFFoodProcessing",
+				                                "LCHFFoodProcessing", webIngredients);
+				}
+					}
+			     }
+				
+				if (lchfEliminate) {
+					if(lchfAdd) {
+						if(lchfAllergies) {
+				    saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFAllergy", 
+				                                "LCHFAllergy", webIngredients);
+				}
 					}
 				}
-				if (!recipeIDExists && lchfEliminate) {
-					if (lchfAdd) {
-						if (lchfAllergies) {
-							saveRecipeToDatabasemethods(dto, recipeID, recipeName, "LCHFAllergies", "LCHFAllergies",
-									webIngredients);
-						}
-					}
-				}
+
 			}
 		} catch (SQLException e) {
 			if (e.getMessage().contains("duplicate key value violates unique constraint")) {
@@ -230,7 +236,6 @@ public class Recipes_LCHFPage {
 
 	private List<String> extractIngredients() {
 		List<WebElement> ingredientsList = driver
-				// .findElements(By.xpath("//div[@id='rcpinglist']//span[@itemprop='recipeIngredient']//a/span"));
 				.findElements(By.xpath("//div[@id='rcpinglist']"));
 
 		List<String> webIngredients = new ArrayList<>();
